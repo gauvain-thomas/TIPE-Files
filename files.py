@@ -1,3 +1,8 @@
+"""
+Définit les classes relatives à la construction et la simultaion de files d'attente.
+"""
+from copy import deepcopy
+
 class File:
     """
     Classe File :
@@ -9,16 +14,28 @@ class File:
     buffer : Liste des clients
     liste_attentes : Le temps d'attente d'un client y est ajouté dès qu'il a été traité
     pertes : nombre de pertes
+    t : Temps propre de la file
+    A : Dictionnaire des arrivées à un certain temps, par exemple, A[3] renvoie une liste
+        des clients arrivant à t=3
     """
 
-    def __init__(self, K, serveurs):
+    def __init__(self, K, serveurs, A=dict()):
         self.K = K
         self.serveurs = serveurs
 
         self.pertes = 0
+        self.pertes_poids = 0
         self.buffer = []
-
+        self.t = 0
+        self.A = deepcopy(A)
+        self.A_copy = A
         self.liste_attentes = []
+
+    def reset(self):
+        """Remise à zéro de la file, avec les mêmes valeurs initiales"""
+        for serveur in self.serveurs:
+            serveur.reset()
+        self.__init__(self.K, self.serveurs, self.A_copy)
 
     def __str__(self):
         visuel = str(self.buffer) + '\n'
@@ -31,16 +48,23 @@ class File:
         Appelle la foncton itération pour chacun des serveurs. Incrémente les
         temps d'attente des clients
         """
+        arrivees = self.A.get(self.t)
+        if arrivees != None:
+            self.ajoute_liste_clients(arrivees)
+
         for serveur in self.serveurs:
             serveur.iteration(self)
 
         for client in self.buffer:
             client.inc_temps()
 
+        self.t += 1
+
     def simulation(self, affichage=False):
         """Itère la file jusqu'à que le buffer et les serveurs soient vides"""
         # print('Début de la simulation')
-        while not self.file_vide():
+        # print(bool(self.file_vide()))
+        while not self.file_vide() or self.reste_clients():
             if affichage:
                 print(self)
             self.iteration()
@@ -51,11 +75,17 @@ class File:
         """Renvoie True si le buffer est vide, ainsi que chacun des serveurs"""
         # i, n = 0, len(self.serveurs)
         est_vide = self.buffer_vide()
+        # print(est_vide)
+        if self.A:
+            est_vide = est_vide and not self.reste_clients()
         for serveur in self.serveurs:
             if serveur.has_client:
                 est_vide = False
                 break
         return est_vide
+
+    def reste_clients(self):
+        return self.t < len(self.A)
 
     def nbr_clients(self):
         """Renvoie le nombre de clients dans le buffer"""
@@ -78,11 +108,24 @@ class File:
             self.buffer.append(client)
         else:
             self.pertes += 1
+            self.pertes_poids += client.poids
 
     def ajoute_liste_clients(self, lc):
         """Ajoute chacun des clients d'une liste au buffer"""
         for client in lc:
             self.ajoute_client(client)
+
+    def pop_buff_min(self):
+        index = 0
+        poids_min = self.buffer[0].poids
+        for i in range(len(self.buffer)):
+            poids = self.buffer[i].poids
+            if poids == 1:
+                return self.buffer.pop(i)
+            if poids < poids_min:
+                index = i
+
+        return self.buffer.pop(i)
 
     def affiche_etat(self):
         pass
@@ -110,6 +153,9 @@ class Serveur:
             if self.client_actuel.poids_neg():
                 F.sortir_client(self.client_actuel.temps_attente)
                 self.has_client = False
+
+    def reset(self):
+        self.has_client = False
 
 class Serveur_FIFO(Serveur):
     """Serveur First In First Out"""
@@ -182,6 +228,25 @@ class Serveur_RR(Serveur):
         self.has_client = True
         self.temps_attendu = 0
 
+class Serveur_Prio(Serveur):
+    """Serveur Priorité"""
+
+    # def __init__(self, S):
+    #     super().__init__(S)
+
+    def __str__(self):
+        return 'PRIO : ' + super().__str__()
+
+    def iteration(self, F):
+        if not (self.has_client or F.buffer_vide()):
+            self.nouveau_client(F)
+
+        super().iteration(F)
+
+
+    def nouveau_client(self, F):
+        self.client_actuel = F.pop_buff_min()
+        self.has_client = True
 
 class Client:
     """Classe client : Contient un temps d'attente et un poids"""

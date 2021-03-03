@@ -13,7 +13,8 @@ class File:
 
     buffer : Liste des clients
     liste_attentes : Le temps d'attente d'un client y est ajouté dès qu'il a été traité
-    pertes : nombre de pertes
+    pertes : Nombre de pertes en terme de clients
+    pertes_poids : Nombre de pertes en terme de clients
     t : Temps propre de la file
     A : Dictionnaire des arrivées à un certain temps, par exemple, A[3] renvoie une liste
         des clients arrivant à t=3
@@ -130,11 +131,34 @@ class File:
     def affiche_etat(self):
         pass
 
+class Client:
+    """Classe client : Contient un temps d'attente et un poids"""
+
+    def __init__(self, poids=1):
+        self.poids = poids
+        self.temps_attente = 0
+
+    def __repr__(self):
+        """Représentation d'un client, entièrement défini par un temps et un poids"""
+        return '<{} {}>'.format(self.temps_attente, self.poids)
+
+    def inc_temps(self):
+        """Incrémente le temps d'attente du client"""
+        self.temps_attente += 1
+
+    def retire_poids(self, p):
+        self.poids -= p
+
+    def poids_neg(self):
+        return self.poids <= 0
+
+# %% Serveurs
 class Serveur:
     """
     Classe Serveur : Définie à partir d'une loi de sortie
     Contient un seul client à la fois
     """
+
     def __init__(self, S):
         self.S = S
         self.has_client = False
@@ -146,13 +170,29 @@ class Serveur:
             return 'Vide'
 
     def iteration(self, F):
+        """
+        Le poids à enlever est défini par la loi d'arrivée, et le serveur
+        continue à récupérer des clients tant que il peut retirer du poids
+        """
+        self.poids_restant = self.S()
+        while self.poids_restant > 0:
+            if self.has_client:
+                self.client_actuel.retire_poids(self.poids_restant)
+
+                if self.client_actuel.poids_neg():
+                    self.poids_restant = abs(self.client_actuel.poids)
+                    F.sortir_client(self.client_actuel.temps_attente)
+                    self.has_client = False
+                else:
+                    self.poids_restant = 0
+            else:
+                if not F.buffer_vide():
+                    self.nouveau_client(F)
+                else:
+                    self.poids_restant = 0
+
         if self.has_client:
             self.client_actuel.inc_temps()
-            self.client_actuel.retire_poids(self.S())
-
-            if self.client_actuel.poids_neg():
-                F.sortir_client(self.client_actuel.temps_attente)
-                self.has_client = False
 
     def reset(self):
         self.has_client = False
@@ -229,7 +269,7 @@ class Serveur_RR(Serveur):
         self.temps_attendu = 0
 
 class Serveur_Prio(Serveur):
-    """Serveur Priorité"""
+    """Serveur Priorité : le serveur choisit un client dans le buffer dont le poids est minimal"""
 
     # def __init__(self, S):
     #     super().__init__(S)
@@ -247,23 +287,3 @@ class Serveur_Prio(Serveur):
     def nouveau_client(self, F):
         self.client_actuel = F.pop_buff_min()
         self.has_client = True
-
-class Client:
-    """Classe client : Contient un temps d'attente et un poids"""
-    def __init__(self, poids=1):
-        self.poids = poids
-        self.temps_attente = 0
-
-    def __repr__(self):
-        """Représentation d'un client, entièrement défini par un temps et un poids"""
-        return '<{} {}>'.format(self.temps_attente, self.poids)
-
-    def inc_temps(self):
-        """Incrémente le temps d'attente du client"""
-        self.temps_attente += 1
-
-    def retire_poids(self, p):
-        self.poids -= p
-
-    def poids_neg(self):
-        return self.poids <= 0

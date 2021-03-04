@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Fichiers de Camil à ignorer
+
+tests.ipynb
+.DS_Store
+.vscode/
+
 # User-specific files
 *.rsuser
 *.suo

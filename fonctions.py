@@ -99,29 +99,19 @@ def trace_taille_pertes(f1, f2, A):
 
     fig, axs = plt.subplots(2)
 
-    color = 'tab:blue'
-    axs[0].title.set_text(f1.type)
+    axs[0].title.set_text('taille de la file')
     axs[0].set_xlabel('temps')
-    axs[0].set_ylabel('taille de la file', color=color)
-    axs[0].plot(N1, color=color)
-    axs[0].tick_params(axis='y', labelcolor=color)
+    axs[0].plot(N1, color='blue', label=f1.type)
+    axs[0].tick_params(axis='y')
+    axs[0].plot(N2, color='orange', label=f2.type)
+    axs[0].legend()
 
-    ax2 = axs[0].twinx()  # instantiate a second axes that shares the same x-axis
-    color = 'tab:orange'
-    ax2.set_ylabel('pertes', color=color)
-    ax2.plot(P1, color=color, alpha=0.5)
-    ax2.tick_params(axis='y', labelcolor=color)
-
-    color = 'tab:blue'
-    axs[1].title.set_text(f2.type)
+    axs[1].title.set_text('pertes')
     axs[1].set_xlabel('temps')
-    axs[1].plot(N2, color=color)
-    axs[1].tick_params(axis='y', labelcolor=color)
-
-    ax3 = axs[1].twinx()
-    color = 'tab:orange'
-    ax3.plot(P2, color=color, alpha=0.5)
-    ax3.tick_params(axis='y', labelcolor=color)
+    axs[1].plot(P1, color='blue')
+    axs[1].tick_params(axis='y')
+    axs[1].plot(P2, color='orange')
+    
 
     fig.tight_layout()
 
@@ -134,38 +124,49 @@ def trace_taille_arrivees(f1, f2, A):
     t2, N2, _ = f2.run(A2)
     N1, N2, arrivees1, arrivees2 = lire_evenements(N1, t1), lire_evenements(N2, t2), lire_evenements_creux(A3, t1, cumule = 1), lire_evenements_creux(A3, t2, cumule=1)
 
-    fig, axs = plt.subplots(2)
+    fig, ax = plt.subplots()
 
-    color = 'tab:blue'
-    axs[0].title.set_text(f1.type)
-    axs[0].set_xlabel('temps')
-    axs[0].set_ylabel('taille de la file', color=color)
-    axs[0].plot(N1, color=color)
-    axs[0].tick_params(axis='y', labelcolor=color)
+    ax.title.set_text('taille de la file')
+    ax.set_xlabel('temps')
+    ax.plot(N1, color='tab:blue', label=f1.type)
+    ax.tick_params(axis='y')
+    ax.plot(N2, color='tab:orange', label=f2.type)
+    ax.legend()
 
-    ax2 = axs[0].twinx()  # instantiate a second axes that shares the same x-axis
-    color = 'tab:red'
+    ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
+    color = 'black'
     ax2.set_ylabel('arrivees', color=color)
-    ax2.plot(arrivees1, color=color, alpha=0.3)
+    ax2.plot(arrivees1, color=color, alpha=0.2)
     ax2.tick_params(axis='y', labelcolor=color)
-
-    color = 'tab:blue'
-    axs[1].title.set_text(f2.type)
-    axs[1].set_xlabel('temps')
-    axs[1].plot(N2, color=color)
-    axs[1].tick_params(axis='y', labelcolor=color)
-
-    ax3 = axs[1].twinx()
-    color = 'tab:red'
-    ax3.plot(arrivees2, color=color, alpha=0.3)
-    ax3.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()
 
     plt.show()
 
-    print(f1.type, ':', f1.pertes, 'pertes')
-    print(f2.type, ':', f2.pertes, 'pertes')
+    print((f1.type+':'), f1.pertes, 'pertes (pondérées)')
+    print(f2.type+':', f2.pertes, 'pertes (pondérées)')
+
+def trace_taille(f1, f2, A):
+    A2 = cp.deepcopy(A)
+    t1, N1, P1 = f1.run(A)
+    t2, N2, P2 = f2.run(A2)
+    N1, N2, P1, P2 = lire_evenements(N1, t1), lire_evenements(N2, t2), lire_evenements(P1, t1), lire_evenements(P2, t2)
+
+    fig, ax = plt.subplots()
+
+    ax.title.set_text('taille de la file')
+    ax.set_xlabel('temps')
+    ax.plot(N1, color='blue', label=f1.type)
+    ax.tick_params(axis='y')
+    ax.plot(N2, color='orange', label=f2.type)
+    ax.legend()
+
+    fig.tight_layout()
+
+    plt.show()
+
+    print((f1.type+':'), f1.pertes, 'pertes (pondérées)')
+    print((f2.type+':'), f2.pertes, 'pertes (pondérées)')
 
 def trace(f, A):
     t, N, _ = f.run(A)

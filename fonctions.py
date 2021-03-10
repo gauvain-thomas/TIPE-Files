@@ -31,6 +31,13 @@ def somme_arrivees(A1, A2):
         insertion(A,a)
     return A
 
+def fusion_arrivees(liste_arrivees):
+    '''Fusionne une liste de paterns d'arrivees.'''
+    A = liste_arrivees.pop(0)
+    if liste_arrivees:
+        return somme_arrivees(A, fusion_arrivees(liste_arrivees))
+    else:
+        return A
 #----------Distributions de poids----------
 
 def poids_deterministe(n):

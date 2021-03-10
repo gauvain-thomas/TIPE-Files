@@ -2,6 +2,8 @@
 Définit les classes relatives à la construction et la simultaion de files d'attente.
 """
 from copy import deepcopy
+import time
+# from random import choose
 
 class File:
     """
@@ -18,9 +20,10 @@ class File:
     t : Temps propre de la file
     A : Dictionnaire des arrivées à un certain temps, par exemple, A[3] renvoie une liste
         des clients arrivant à t=3
+    couleur : Uniquement utilisé pour les représentations graphiques
     """
 
-    def __init__(self, K, serveurs, A=dict()):
+    def __init__(self, K, serveurs, A=dict(), couleur='red'):
         self.K = K
         self.serveurs = serveurs
 
@@ -31,6 +34,7 @@ class File:
         self.A = deepcopy(A)
         self.A_copy = A
         self.liste_attentes = []
+        self.couleur = couleur
 
     def reset(self):
         """Remise à zéro de la file, avec les mêmes valeurs initiales"""
@@ -65,10 +69,12 @@ class File:
         """Itère la file jusqu'à que le buffer et les serveurs soient vides"""
         # print('Début de la simulation')
         # print(bool(self.file_vide()))
+        # start = time.time()
         while not self.file_vide() or self.reste_clients():
             if affichage:
                 print(self)
             self.iteration()
+        # print("Simulation finie en : {} secondes".format(int(time.time()-start)))
         # print(self)
         # print('Fin de la simulation')
 
@@ -127,9 +133,6 @@ class File:
                 index = i
 
         return self.buffer.pop(i)
-
-    def affiche_etat(self):
-        pass
 
 class Client:
     """Classe client : Contient un temps d'attente et un poids"""

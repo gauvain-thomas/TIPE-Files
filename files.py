@@ -2,6 +2,8 @@
 Définit les classes relatives à la construction et la simultaion de files d'attente.
 """
 from copy import deepcopy
+import time
+# from random import choose
 
 class File:
     """
@@ -13,26 +15,30 @@ class File:
 
     buffer : Liste des clients
     liste_attentes : Le temps d'attente d'un client y est ajouté dès qu'il a été traité
-    pertes : nombre de pertes
+    pertes : Nombre de pertes en terme de clients
+    pertes_poids : Nombre de pertes en terme de clients
     t : Temps propre de la file
     A : Dictionnaire des arrivées à un certain temps, par exemple, A[3] renvoie une liste
         des clients arrivant à t=3
+    couleur : Uniquement utilisé pour les représentations graphiques
     """
 
-    def __init__(self, K, serveurs, A=dict()):
+    def __init__(self, K, serveurs, nom, A=dict(), couleur='red'):
         self.K = K
         self.serveurs = serveurs
+        self.nom = nom
 
         self.pertes = 0
         self.pertes_poids = 0
         self.buffer = []
         self.t = 0
         self.A = deepcopy(A)
-        self.A_copy = A
+        self.A_copy = deepcopy(A)
         self.liste_attentes = []
+        self.couleur = couleur
 
     def reset(self):
-        """Remise à zéro de la file, avec les mêmes valeurs initiales"""
+        """Remise à zéro de la file, avec les mêmes valeurs initiales --- NON FONCTIONNEL"""
         for serveur in self.serveurs:
             serveur.reset()
         self.__init__(self.K, self.serveurs, self.A_copy)
@@ -64,10 +70,12 @@ class File:
         """Itère la file jusqu'à que le buffer et les serveurs soient vides"""
         # print('Début de la simulation')
         # print(bool(self.file_vide()))
+        # start = time.time()
         while not self.file_vide() or self.reste_clients():
             if affichage:
                 print(self)
             self.iteration()
+        # print("Simulation finie en : {} secondes".format(int(time.time()-start)))
         # print(self)
         # print('Fin de la simulation')
 
@@ -127,17 +135,39 @@ class File:
 
         return self.buffer.pop(i)
 
-    def affiche_etat(self):
-        pass
+class Client:
+    """Classe client : Contient un temps d'attente et un poids"""
 
+    def __init__(self, poids=1):
+        self.poids = poids
+        self.temps_attente = 0
+
+    def __repr__(self):
+        """Représentation d'un client, entièrement défini par un temps et un poids"""
+        return '<{} {}>'.format(self.temps_attente, self.poids)
+
+    def inc_temps(self):
+        """Incrémente le temps d'attente du client"""
+        self.temps_attente += 1
+
+    def retire_poids(self, p):
+        self.poids -= p
+
+    def poids_neg(self):
+        return self.poids <= 0
+
+# %% Serveurs
 class Serveur:
     """
     Classe Serveur : Définie à partir d'une loi de sortie
     Contient un seul client à la fois
     """
-    def __init__(self, S):
+
+    def __init__(self, S, nbr_sorties_moyen, loi):
         self.S = S
         self.has_client = False
+        self.loi = loi
+        self.nbr_sorties_moyen = nbr_sorties_moyen
 
     def __str__(self):
         if self.has_client:
@@ -146,13 +176,29 @@ class Serveur:
             return 'Vide'
 
     def iteration(self, F):
+        """
+        Le poids à enlever est défini par la loi d'arrivée, et le serveur
+        continue à récupérer des clients tant que il peut retirer du poids
+        """
+        self.poids_restant = self.S()
+        while self.poids_restant > 0:
+            if self.has_client:
+                self.client_actuel.retire_poids(self.poids_restant)
+
+                if self.client_actuel.poids_neg():
+                    self.poids_restant = abs(self.client_actuel.poids)
+                    F.sortir_client(self.client_actuel.temps_attente)
+                    self.has_client = False
+                else:
+                    self.poids_restant = 0
+            else:
+                if not F.buffer_vide():
+                    self.nouveau_client(F)
+                else:
+                    self.poids_restant = 0
+
         if self.has_client:
             self.client_actuel.inc_temps()
-            self.client_actuel.retire_poids(self.S())
-
-            if self.client_actuel.poids_neg():
-                F.sortir_client(self.client_actuel.temps_attente)
-                self.has_client = False
 
     def reset(self):
         self.has_client = False
@@ -203,8 +249,8 @@ class Serveur_RR(Serveur):
     il est renvoyé dans le buffer et un autre client est récupéré.
     """
 
-    def __init__(self, S, attente_max):
-        super().__init__(S)
+    def __init__(self, S, attente_max, nbr_sorties_moyen, loi):
+        super().__init__(S, nbr_sorties_moyen, loi)
         self.attente_max = attente_max
         self.temps_attendu = 0
 
@@ -229,7 +275,7 @@ class Serveur_RR(Serveur):
         self.temps_attendu = 0
 
 class Serveur_Prio(Serveur):
-    """Serveur Priorité"""
+    """Serveur Priorité : le serveur choisit un client dans le buffer dont le poids est minimal"""
 
     # def __init__(self, S):
     #     super().__init__(S)
@@ -247,23 +293,3 @@ class Serveur_Prio(Serveur):
     def nouveau_client(self, F):
         self.client_actuel = F.pop_buff_min()
         self.has_client = True
-
-class Client:
-    """Classe client : Contient un temps d'attente et un poids"""
-    def __init__(self, poids=1):
-        self.poids = poids
-        self.temps_attente = 0
-
-    def __repr__(self):
-        """Représentation d'un client, entièrement défini par un temps et un poids"""
-        return '<{} {}>'.format(self.temps_attente, self.poids)
-
-    def inc_temps(self):
-        """Incrémente le temps d'attente du client"""
-        self.temps_attente += 1
-
-    def retire_poids(self, p):
-        self.poids -= p
-
-    def poids_neg(self):
-        return self.poids <= 0

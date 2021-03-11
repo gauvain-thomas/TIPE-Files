@@ -18,6 +18,7 @@ class File:
         self.pertes = 0
         self.pertes_ponderees = 0
         self.fin_service = 0
+        self.temps_attente = []
 
     def reset(self):
         for serveur in self.serveurs:
@@ -98,6 +99,7 @@ class Serveur:
             self.client_actuel = file.buffer.pop(0)
             self.action_buffer -= 1
             self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
+            file.temps_attente.append(self.temps_service - self.client_actuel[0])
         elif A:
             self.temps_service = A[0][0]
         else:
@@ -131,6 +133,7 @@ class Serveur_RR(Serveur):
                 self.client_actuel = (t,p)
             else:
                 self.temps_service = temps_de_service + file.horloge
+                file.temps_attente.append(self.temps_service - self.client_actuel[0])
                 self.client_actuel = None
         elif A:
             self.temps_service = A[0][0]
@@ -154,6 +157,7 @@ class Serveur_Priorite(Serveur):
             self.client_actuel = pop_min(file.buffer)
             self.action_buffer -= 1
             self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
+            file.temps_attente.append(self.temps_service - self.client_actuel[0])
         elif A:
             self.temps_service = A[0][0]
         else:

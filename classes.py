@@ -18,6 +18,7 @@ class File:
         self.pertes = 0
         self.pertes_ponderees = 0
         self.fin_service = 0
+        self.temps_chez_serveurs = []
 
     def reset(self):
         for serveur in self.serveurs:
@@ -82,7 +83,7 @@ class File:
 
 class Serveur:
     '''Classe représentant un serveur.'''
-    def __init__(self, loi_temps = lambda poids :int(ceil(poids/10))):
+    def __init__(self, loi_temps = lambda poids :poids/10):
         self.loi_temps = loi_temps
         self.client_actuel = None
         self.temps_service = 0 # Instant au quel le serveur aura fini de servir le cilent actuel
@@ -98,6 +99,7 @@ class Serveur:
             self.client_actuel = file.buffer.pop(0)
             self.action_buffer -= 1
             self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
+            file.temps_chez_serveurs.append(self.temps_service - file.horloge)
         elif A:
             self.temps_service = A[0][0]
         else:
@@ -110,7 +112,7 @@ class Serveur_RR(Serveur):
     Les serveurs Round Robin servent un client pendant une durée max (quantum) avant de le réinsrer dans la file.
     '''
     
-    def __init__(self, quantum, loi_temps = lambda poids:int(ceil(poids/10))):
+    def __init__(self, quantum, loi_temps = lambda poids:poids/10):
         super().__init__(loi_temps)
         self.quantum = quantum
     def service(self, file, A):
@@ -144,7 +146,7 @@ class Serveur_Priorite(Serveur):
     Les serveurs Priorite appellent systematiquement le client de plus petit poids dans la file.
     '''
     
-    def __init__(self, loi_temps = lambda poids:int(ceil(poids/10))):
+    def __init__(self, loi_temps = lambda poids:poids/10):
         super().__init__()
 
     def service(self, file, A):

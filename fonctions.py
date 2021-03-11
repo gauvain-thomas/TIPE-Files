@@ -59,7 +59,7 @@ def service_pile_ou_face(p):
 
 def lire_evenements_creux(evenements, t_max, cumule=0):
     '''Convertit une liste d'evenements en une liste d'instants distincts.'''
-    out = [0]*(t_max+1)
+    out = [0]*int(np.ceil((t_max+1)))
     for ev in evenements:
         instant, valeur = ev
         if cumule:
@@ -68,18 +68,15 @@ def lire_evenements_creux(evenements, t_max, cumule=0):
             out[instant] = valeur
     return out
 
-def lire_evenements(evenements, t_max):
-    '''Convertit une liste d'evenements en une liste d'instants, valeurs mises à jour uniquement lors d'un evenement'''
-    out = [0]*(t_max+1)
-    for i in range(len(evenements)-1):
-        instant, valeur = evenements[i]
-        instant_pro = evenements[i+1][0]
-        for k in range(instant, instant_pro):
-            out[k] = valeur
-    instant, valeur = evenements[-1]
-    for i in range(instant, t_max):
-        out[i] = valeur
-    return out
+def lire_evenements(evenements):
+    '''Convertit une liste d'evenements en une liste d'instants et une liste des valeurs'''
+    valeurs = []
+    temps = []
+    for ev in evenements:
+        t, v = ev
+        temps.append(t)
+        valeurs.append(v)
+    return temps, valeurs
 
 #----------Tracés----------
 
@@ -95,22 +92,26 @@ def trace_taille_pertes(f1, f2, A):
     A2 = cp.deepcopy(A)
     t1, N1, P1 = f1.run(A)
     t2, N2, P2 = f2.run(A2)
-    N1, N2, P1, P2 = lire_evenements(N1, t1), lire_evenements(N2, t2), lire_evenements(P1, t1), lire_evenements(P2, t2)
+
+    tn1, N1 = lire_evenements(N1)
+    tn2, N2 = lire_evenements(N2)
+    tp1, P1 = lire_evenements(P1)
+    tp2, P2 = lire_evenements(P2)
 
     fig, axs = plt.subplots(2)
 
     axs[0].title.set_text('taille de la file')
     axs[0].set_xlabel('temps')
-    axs[0].plot(N1, color='blue', label=f1.type)
+    axs[0].plot(tn1, N1, color='blue', label=f1.type)
     axs[0].tick_params(axis='y')
-    axs[0].plot(N2, color='orange', label=f2.type)
+    axs[0].plot(tn2, N2, color='orange', label=f2.type)
     axs[0].legend()
 
     axs[1].title.set_text('pertes')
     axs[1].set_xlabel('temps')
-    axs[1].plot(P1, color='blue')
+    axs[1].plot(tp1, P1, color='blue')
     axs[1].tick_params(axis='y')
-    axs[1].plot(P2, color='orange')
+    axs[1].plot(tp2, P2, color='orange')
     
 
     fig.tight_layout()
@@ -122,15 +123,18 @@ def trace_taille_arrivees(f1, f2, A):
     A3 = cp.deepcopy(A)
     t1, N1, _ = f1.run(A)
     t2, N2, _ = f2.run(A2)
-    N1, N2, arrivees1, arrivees2 = lire_evenements(N1, t1), lire_evenements(N2, t2), lire_evenements_creux(A3, t1, cumule = 1), lire_evenements_creux(A3, t2, cumule=1)
+
+    tn1, N1 = lire_evenements(N1)
+    tn2, N2 = lire_evenements(N2)
+    arrivees1, arrivees2 = lire_evenements_creux(A3, t1, cumule = 1), lire_evenements_creux(A3, t2, cumule=1)
 
     fig, ax = plt.subplots()
 
     ax.title.set_text('taille de la file')
     ax.set_xlabel('temps')
-    ax.plot(N1, color='tab:blue', label=f1.type)
+    ax.plot(tn1, N1, color='tab:blue', label=f1.type)
     ax.tick_params(axis='y')
-    ax.plot(N2, color='tab:orange', label=f2.type)
+    ax.plot(tn2, N2, color='tab:orange', label=f2.type)
     ax.legend()
 
     ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
@@ -148,17 +152,18 @@ def trace_taille_arrivees(f1, f2, A):
 
 def trace_taille(f1, f2, A):
     A2 = cp.deepcopy(A)
-    t1, N1, P1 = f1.run(A)
-    t2, N2, P2 = f2.run(A2)
-    N1, N2, P1, P2 = lire_evenements(N1, t1), lire_evenements(N2, t2), lire_evenements(P1, t1), lire_evenements(P2, t2)
+    t1, N1, _ = f1.run(A)
+    t2, N2, _ = f2.run(A2)
+    tn1, N1 = lire_evenements(N1)
+    tn2, N2 = lire_evenements(N2)
 
     fig, ax = plt.subplots()
 
     ax.title.set_text('taille de la file')
     ax.set_xlabel('temps')
-    ax.plot(N1, color='blue', label=f1.type)
+    ax.plot(tn1, N1, color='blue', label=f1.type)
     ax.tick_params(axis='y')
-    ax.plot(N2, color='orange', label=f2.type)
+    ax.plot(tn2, N2, color='orange', label=f2.type)
     ax.legend()
 
     fig.tight_layout()
@@ -170,7 +175,7 @@ def trace_taille(f1, f2, A):
 
 def trace(f, A):
     t, N, _ = f.run(A)
-    N = lire_evenements(N,t)
+    N = lire_evenements(N)
     plt.step([i+1 for i in range(t+1)],N)
     plt.show()
 

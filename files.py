@@ -23,21 +23,22 @@ class File:
     couleur : Uniquement utilisé pour les représentations graphiques
     """
 
-    def __init__(self, K, serveurs, A=dict(), couleur='red'):
+    def __init__(self, K, serveurs, nom, A=dict(), couleur='red'):
         self.K = K
         self.serveurs = serveurs
+        self.nom = nom
 
         self.pertes = 0
         self.pertes_poids = 0
         self.buffer = []
         self.t = 0
         self.A = deepcopy(A)
-        self.A_copy = A
+        self.A_copy = deepcopy(A)
         self.liste_attentes = []
         self.couleur = couleur
 
     def reset(self):
-        """Remise à zéro de la file, avec les mêmes valeurs initiales"""
+        """Remise à zéro de la file, avec les mêmes valeurs initiales --- NON FONCTIONNEL"""
         for serveur in self.serveurs:
             serveur.reset()
         self.__init__(self.K, self.serveurs, self.A_copy)
@@ -162,9 +163,11 @@ class Serveur:
     Contient un seul client à la fois
     """
 
-    def __init__(self, S):
+    def __init__(self, S, nbr_sorties_moyen, loi):
         self.S = S
         self.has_client = False
+        self.loi = loi
+        self.nbr_sorties_moyen = nbr_sorties_moyen
 
     def __str__(self):
         if self.has_client:
@@ -246,8 +249,8 @@ class Serveur_RR(Serveur):
     il est renvoyé dans le buffer et un autre client est récupéré.
     """
 
-    def __init__(self, S, attente_max):
-        super().__init__(S)
+    def __init__(self, S, attente_max, nbr_sorties_moyen, loi):
+        super().__init__(S, nbr_sorties_moyen, loi)
         self.attente_max = attente_max
         self.temps_attendu = 0
 

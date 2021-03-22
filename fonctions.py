@@ -19,7 +19,7 @@ def poisson(n, lam, distribution_poids):
     '''Genere des arrivees de λ clients par unite de temps en moyenne, suivant une loi de poisson.'''
     arr_par_inst = np.random.poisson(lam, n)
     A = []
-    for i in range(len(arr_par_inst)):
+    for i in range(n):
         for j in range(arr_par_inst[i]):
             A.append((i, distribution_poids()))
     return A
@@ -90,8 +90,8 @@ def distribution(l):
 
 def trace_taille_pertes(f1, f2, A):
     A2 = cp.deepcopy(A)
-    t1, N1, P1 = f1.run(A)
-    t2, N2, P2 = f2.run(A2)
+    N1, P1 = f1.simul_taille_pertes(A)
+    N2, P2 = f2.simul_taille_pertes(A2)
 
     tn1, N1 = lire_evenements(N1)
     tn2, N2 = lire_evenements(N2)
@@ -121,8 +121,8 @@ def trace_taille_pertes(f1, f2, A):
 def trace_taille_arrivees(f1, f2, A):
     A2 = cp.deepcopy(A)
     A3 = cp.deepcopy(A)
-    t1, N1, _ = f1.run(A)
-    t2, N2, _ = f2.run(A2)
+    N1= f1.simul_taille(A)
+    N2= f2.simul_taille(A2)
 
     tn1, N1 = lire_evenements(N1)
     tn2, N2 = lire_evenements(N2)
@@ -152,8 +152,8 @@ def trace_taille_arrivees(f1, f2, A):
 
 def trace_taille(f1, f2, A):
     A2 = cp.deepcopy(A)
-    t1, N1, _ = f1.run(A)
-    t2, N2, _ = f2.run(A2)
+    N1= f1.simul_taille(A)
+    N2= f2.simul_taille(A2)
     tn1, N1 = lire_evenements(N1)
     tn2, N2 = lire_evenements(N2)
 
@@ -174,9 +174,9 @@ def trace_taille(f1, f2, A):
     print((f2.type+':'), f2.pertes, 'pertes (pondérées)')
 
 def trace(f, A):
-    t, N, _ = f.run(A)
-    N = lire_evenements(N)
-    plt.step([i+1 for i in range(t+1)],N)
+    N= f.simul_taille(A)
+    t,N = lire_evenements(N)
+    plt.step(t,N)
     plt.show()
 
 #----------Fonctions usuelles----------

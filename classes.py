@@ -1,5 +1,3 @@
-from numpy import ceil
-
 #----------Classes----------
 
 class File:
@@ -25,29 +23,62 @@ class File:
         for serveur in self.serveurs:
             serveur.reset()
         self.__init__(self.taille_buffer, self.serveurs)
-    
-    def prochain_evenement(self, A):
 
-        liste = [serv.temps_service for serv in self.serveurs]
-        i = indice_min(liste)
+    def simul(self,A):
 
-        if A and (A[0][0] <= liste[i]):
+        nb_serveurs = len(self.serveurs)
 
-            t,p = A.pop(0)
-            if self.occupation <= self.taille_buffer :
-                self.buffer.append([t,p])
-                self.occupation += 1
+        while self.fin_service != nb_serveurs:
+            
+            liste = [serv.temps_service for serv in self.serveurs]
+            i = indice_min(liste)
+
+            if A and (A[0][0] <= liste[i]):
+                t,p = A.pop(0)
+                self.horloge = t
+                if self.occupation <= self.taille_buffer :
+                    self.buffer.append([t,p])
+                    self.occupation += 1
+                else:
+                    self.pertes += 1
+                    self.pertes_ponderees += p
+
             else:
-                self.pertes += 1
-                self.pertes_ponderees += p
-            self.horloge = t
+                self.serveurs[i].service(self, A)
+                self.occupation += self.serveurs[i].action_buffer
 
-        else:
-            self.serveurs[i].service(self, A)
-            self.occupation += self.serveurs[i].action_buffer
-        print('oc = ',self.occupation,'buff = ',self.buffer,'clock = ', self.horloge)
+    def simul_taille(self,A):
+
+        N = []
+
+        nb_serveurs = len(self.serveurs)
+
+        while self.fin_service != nb_serveurs:
+            
+            liste = [serv.temps_service for serv in self.serveurs]
+            i = indice_min(liste)
+
+            if A and (A[0][0] <= liste[i]):
+                t,p = A.pop(0)
+                self.horloge = t
+                if self.occupation <= self.taille_buffer :
+                    self.buffer.append([t,p])
+                    self.occupation += 1
+                else:
+                    self.pertes += 1
+                    self.pertes_ponderees += p
+                N.append((self.horloge, self.occupation))
+
+            else:
+                self.serveurs[i].service(self, A)
+                self.occupation += self.serveurs[i].action_buffer
+                N.append((self.horloge, self.occupation))
+                
+        N.append((self.horloge, self.occupation))
+
+        return N
         
-    def run(self,A):
+    def simul_taille_pertes(self,A):
 
         N = []
         P = []
@@ -80,7 +111,7 @@ class File:
         N.append((self.horloge, self.occupation))
         P.append((self.horloge, self.pertes_ponderees))
 
-        return self.horloge,N,P
+        return N,P
 
 class Serveur:
     '''Classe représentant un serveur.'''
@@ -91,7 +122,7 @@ class Serveur:
         self.action_buffer = 0 # Décrit la variation de file.occupation (utilisé dans la classe file)
     
     def reset(self):
-        self.__init__()
+        self.__init__(loi_temps = self.loi_temps)
     
     def service(self, file, A):
         file.horloge = self.temps_service

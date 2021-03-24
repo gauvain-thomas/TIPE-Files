@@ -18,26 +18,38 @@ def index_serveur(S):
     con.commit()
     return l[0]
 
+def index_arrivee(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen):
+    """Renvoie l'index de l'arrivée de la BDD, la créant si elle n'existe pas"""
+    query = 'SELECT id FROM Arrivees WHERE loi_arrivees=\'{}\' AND nbr_clients_moy={} AND loi_poids=\'{}\' AND poids_moyen={}'.format(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen)
+    l = con.execute(query).fetchone()
+    if l == None:
+        q_ajout = 'INSERT INTO Arrivees (loi_arrivees, nbr_clients_moy, loi_poids, poids_moyen) VALUES(\'{}\', {}, \'{}\', {})'.format(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen)
+        con.execute(q_ajout)
+        l = con.execute(query).fetchone()
+    con.commit()
+    return l[0]
+
 def index_file(F):
     indices_serveurs = []
     for S in F.serveurs:
          indices_serveurs.append(index_serveur(S))
     K = F.K
     arrivee = F.nom
+    id_arrivee = index_arrivee(F.A['loi_arrivees'], F.A['nbr_clients_moyen'], F.A['loi_poids'], F.A['poids_moyen'])
     nbr_serv = len(indices_serveurs)
     serv1 = indices_serveurs[0]
     if len(indices_serveurs) > 1:
         serv2 = indices_serveurs[1]
-        query = 'SELECT id FROM Files WHERE taille_buffer={} AND arrivee=\'{}\' AND nombre_serveurs={} AND serveur_1_id={} AND serveur_2_id={}'.format(K, arrivee, nbr_serv, serv1, serv2)
+        query = 'SELECT id FROM Files WHERE taille_buffer={} AND id_arrivee=\'{}\' AND nombre_serveurs={} AND serveur_1_id={} AND serveur_2_id={}'.format(K, id_arrivee, nbr_serv, serv1, serv2)
     else:
-        query = 'SELECT id FROM Files WHERE taille_buffer={} AND arrivee=\'{}\' AND nombre_serveurs={} AND serveur_1_id={} AND serveur_2_id is NULL'.format(K, arrivee, nbr_serv, serv1)
+        query = 'SELECT id FROM Files WHERE taille_buffer={} AND id_arrivee=\'{}\' AND nombre_serveurs={} AND serveur_1_id={} AND serveur_2_id is NULL'.format(K, id_arrivee, nbr_serv, serv1)
 
     l = con.execute(query).fetchone()
     if l == None:
         if len(indices_serveurs) > 1:
-            q_ajout = 'INSERT INTO Files (taille_buffer, arrivee, nombre_serveurs, serveur_1_id, serveur_2_id) VALUES({}, \'{}\', {}, {}, {})'.format(K, arrivee, nbr_serv, serv1, serv2)
+            q_ajout = 'INSERT INTO Files (taille_buffer, id_arrivee, nombre_serveurs, serveur_1_id, serveur_2_id) VALUES({}, \'{}\', {}, {}, {})'.format(K, id_arrivee, nbr_serv, serv1, serv2)
         else:
-            q_ajout = 'INSERT INTO Files (taille_buffer, arrivee, nombre_serveurs, serveur_1_id) VALUES({}, \'{}\', {}, {})'.format(K, arrivee, nbr_serv, serv1)
+            q_ajout = 'INSERT INTO Files (taille_buffer, id_arrivee, nombre_serveurs, serveur_1_id) VALUES({}, \'{}\', {}, {})'.format(K, id_arrivee, nbr_serv, serv1)
         con.execute(q_ajout)
         l = con.execute(query).fetchone()
     con.commit()

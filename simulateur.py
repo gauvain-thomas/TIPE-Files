@@ -75,17 +75,5 @@ def insert_simul(f, A, duree, quantite, lamda, poids_moyen, pattern_arrivees, pa
     cur.execute('''INSERT INTO Data(taille, pertes, pertes_ponderees, attente, attente_service, file_id, arrivees_id) VALUES (?,?,?,?,?,?,?)''', row)
     con.commit()
 
-# for k in range(1,30):
-#     liste = [File(k, [Serveur()]), File(k, [Serveur_Priorite(1)])]+[File(k, [Serveur_RR(i)]) for i in range(1,4)]
-#     for _ in range(50):
-#         A = poisson(10000, 1, poids_poisson(10))
-#         for f in liste:
-#             A_bis = deepcopy(A)
-#             f.reset()
-#             insert_simul(f, A_bis, 10000, 10000, 1, 10, 'poisson', 'poisson')
-
-df = pd.read_sql('SELECT buffer, avg(pertes) FROM Data JOIN Files ON file_id = Files.id GROUP BY buffer;', con=con)
-
-df.plot(x = 0, y=1)
 
             

@@ -34,7 +34,7 @@ def index_file(F):
     for S in F.serveurs:
          indices_serveurs.append(index_serveur(S))
     K = F.K
-    arrivee = F.nom
+    # arrivee = F.nom
     id_arrivee = index_arrivee(F.A['loi_arrivees'], F.A['nbr_clients_moyen'], F.A['loi_poids'], F.A['poids_moyen'])
     nbr_serv = len(indices_serveurs)
     serv1 = indices_serveurs[0]

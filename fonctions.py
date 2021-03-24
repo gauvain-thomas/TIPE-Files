@@ -17,9 +17,9 @@ def dirac(t, n, distribution_poids = lambda :1):
 
 def poisson(n, lam, distribution_poids):
     '''Genere des arrivees de λ clients par unite de temps en moyenne, suivant une loi de poisson.'''
-    arr_par_inst = np.random.poisson(lam, n)
+    arr_par_inst = np.random.poisson(lam, (n+1))
     A = []
-    for i in range(n):
+    for i in range(n+1):
         for j in range(arr_par_inst[i]):
             A.append((i, distribution_poids()))
     return A
@@ -174,7 +174,7 @@ def trace_taille(f1, f2, A):
     print((f2.type+':'), f2.pertes, 'pertes (pondérées)')
 
 def trace(f, A):
-    N= f.simul_taille(A)
+    N = f.simul_taille(A)
     t,N = lire_evenements(N)
     plt.step(t,N)
     plt.show()

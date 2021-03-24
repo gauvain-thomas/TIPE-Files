@@ -1,3 +1,30 @@
+#----------Fonctions----------
+
+def indice_min(l): # Sert a trouver le prochain evenement
+    '''Renvoie l'indice du minimum d'une liste.'''
+    out = -2
+    m = float('inf')
+    for i in range(len(l)):
+        if l[i] <= m:
+            m = l[i]
+            out = i
+    return out
+
+def pop_min(buffer): # Appelle le plus petit client
+    #assert buffer
+    indice_min = 0
+    minimum = buffer[0][1]
+    for i in range(1, len(buffer)):
+        x = buffer[i][1]
+        if x < minimum:
+            indice_min = i
+            minimum = x
+    return buffer.pop(indice_min)
+
+def nommer(f, doc): #Confère une docstring à une fonction
+    f.__doc__ = doc
+    return f
+
 #----------Classes----------
 
 class File:
@@ -18,6 +45,9 @@ class File:
         self.fin_service = 0
         self.temps_attente = []
         self.temps_chez_serveurs = []
+
+    def __name__(self):
+        return self.type
 
     def reset(self):
         for serveur in self.serveurs:
@@ -115,11 +145,14 @@ class File:
 
 class Serveur:
     '''Classe représentant un serveur.'''
-    def __init__(self, loi_temps = lambda poids :poids/10):
+    def __init__(self, loi_temps = nommer((lambda poids :poids/10), 'p/10')):
         self.loi_temps = loi_temps
         self.client_actuel = None
         self.temps_service = 0 # Instant au quel le serveur aura fini de servir le cilent actuel
         self.action_buffer = 0 # Décrit la variation de file.occupation (utilisé dans la classe file)
+
+    def __name__(self):
+        return 'FIFO'
     
     def reset(self):
         self.__init__(loi_temps = self.loi_temps)
@@ -145,9 +178,16 @@ class Serveur_RR(Serveur):
     Les serveurs Round Robin servent un client pendant une durée max (quantum) avant de le réinsrer dans la file.
     '''
     
-    def __init__(self, quantum, loi_temps = lambda poids:poids/10):
+    def __init__(self, quantum, loi_temps = nommer((lambda poids :poids/10), 'p/10')):
         super().__init__(loi_temps)
         self.quantum = quantum
+
+    def __name__(self):
+        return 'RR'
+
+    def reset(self):
+        self.__init__(self.quantum, loi_temps = self.loi_temps)
+
     def service(self, file, A):
         file.horloge = self.temps_service
         self.action_buffer = 0
@@ -180,8 +220,11 @@ class Serveur_Priorite(Serveur):
     Les serveurs Priorite appellent systematiquement le client de plus petit poids dans la file.
     '''
     
-    def __init__(self, loi_temps = lambda poids:poids/10):
+    def __init__(self, loi_temps = nommer((lambda poids :poids/10), 'p/10')):
         super().__init__()
+
+    def __name__(self):
+        return 'PRIO'
 
     def service(self, file, A):
         file.horloge = self.temps_service
@@ -196,26 +239,3 @@ class Serveur_Priorite(Serveur):
             self.temps_service = A[0][0]
         else:
             file.fin_service += 1
-
-#----------Fonctions----------
-
-def indice_min(l): # Sert a trouver le prochain evenement
-    '''Renvoie l'indice du minimum d'une liste.'''
-    out = -2
-    m = float('inf')
-    for i in range(len(l)):
-        if l[i] <= m:
-            m = l[i]
-            out = i
-    return out
-
-def pop_min(buffer): # Appelle le plus petit client
-    #assert buffer
-    indice_min = 0
-    minimum = buffer[0][1]
-    for i in range(1, len(buffer)):
-        x = buffer[i][1]
-        if x < minimum:
-            indice_min = i
-            minimum = x
-    return buffer.pop(indice_min)

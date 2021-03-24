@@ -23,25 +23,26 @@ class File:
     couleur : Uniquement utilisé pour les représentations graphiques
     """
 
-    def __init__(self, K, serveurs, nom, A=dict(), couleur='red'):
+    def __init__(self, K, serveurs, couleur='red'):
         self.K = K
         self.serveurs = serveurs
-        self.nom = nom
+        # self.nom = nom
 
         self.pertes = 0
         self.pertes_poids = 0
         self.buffer = []
         self.t = 0
-        self.A = deepcopy(A)
-        self.A_copy = deepcopy(A)
+        # self.A = deepcopy(A)
+        # self.A_copy = deepcopy(A)
         self.liste_attentes = []
         self.couleur = couleur
+        self.somme_clients = 0
 
     def reset(self):
         """Remise à zéro de la file, avec les mêmes valeurs initiales --- NON FONCTIONNEL"""
         for serveur in self.serveurs:
             serveur.reset()
-        self.__init__(self.K, self.serveurs, self.A_copy)
+        self.__init__(self.K, self.serveurs, self.couleur)
 
     def __str__(self):
         visuel = str(self.buffer) + '\n'
@@ -65,6 +66,7 @@ class File:
             client.inc_temps()
 
         self.t += 1
+        self.somme_clients += self.nbr_clients()
 
     def simulation(self, affichage=False):
         """Itère la file jusqu'à que le buffer et les serveurs soient vides"""
@@ -78,6 +80,10 @@ class File:
         # print("Simulation finie en : {} secondes".format(int(time.time()-start)))
         # print(self)
         # print('Fin de la simulation')
+
+    def nbr_clients_moy(self):
+        """Renvoie le nombre de clients moyen dans le buffer depuis le début de la simulation"""
+        return self.somme_clients/self.t
 
     def file_vide(self):
         """Renvoie True si le buffer est vide, ainsi que chacun des serveurs"""

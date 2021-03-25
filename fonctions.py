@@ -14,8 +14,8 @@ import sqlite3
 # def sqlite_power(x,n):
 #     return int(x)**n
 #
-# con = sqlite3.connect('resultats.db')
-con.create_function("power", 2, sqlite_power)
+con = sqlite3.connect('resultats.db')
+# con.create_function("power", 2, sqlite_power)
 # %% Fonctions de création de dictionnaires d'arrivées
 
 def cree_arrivee(d, f, loi_nbr_clients, loi_poids):
@@ -177,7 +177,7 @@ plot_pertes_buffer(9, 50)
 
 # %% Temps d'attente en fonction de la taille du buffer
 
-def plot_attentes_buffer(lam=9, Kmax=50):
+def plot_attentes_buffer(lam=9, Kmax=5000):
     query ='SELECT taille_buffer as K, AVG(attente_moyen) as Attente_moyenne, nbr_clients_moy*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
             FROM Simulation\
             JOIN Files ON Files.id = file_id\
@@ -185,13 +185,54 @@ def plot_attentes_buffer(lam=9, Kmax=50):
             JOIN Serveurs ON serveur_1_id = Serveurs.id\
             WHERE Lambda = {} AND 0<K AND taille_buffer<{}\
             GROUP BY taille_buffer\
-            ORDER BY K'.format(lam, Kmax)
-    df = pd.read_sql(sql=query, con=con)
-    df.plot.scatter(x=0, y=1, color='purple')
+            ORDER BY K'
+    df = pd.read_sql(sql=query.format(lam, Kmax), con=con)
+    df.plot.scatter(x=0, y=1, color='purple', label='λ = {}'.format(lam))
     # df.plot(x='K', y=['Attente_moyenne'], color=['blue'])
     # print(df.head(1))
     # print(df.tail(1))
 
-plot_attentes_buffer(9, 100)
+plot_attentes_buffer(9,100)
+
+plot_attentes_buffer(10,100)
+# %%
+def plot_attentes_buffes_liste(lamliste, Kmax=5000):
+    query ='SELECT taille_buffer as K, AVG(attente_moyen) as Attente_moyenne, nbr_clients_moy*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
+            FROM Simulation\
+            JOIN Files ON Files.id = file_id\
+            JOIN Arrivees ON Files.id_arrivee = Arrivees.id\
+            JOIN Serveurs ON serveur_1_id = Serveurs.id\
+            WHERE Lambda = {} AND 0<K AND taille_buffer<{}\
+            GROUP BY taille_buffer\
+            ORDER BY K'
+
+    for i in lamliste:
+        dfi = pd.read_sql(sql=query.format(i, Kmax), con=con)
+        x = dfi['K'].to_numpy()
+        y = dfi['Attente_moyenne'].to_numpy()
+        plt.scatter(x, y, label='λ = {}'.format(i), s=15)
+    plt.legend(loc=0)
+    # print(df.tail(1))
+
+plot_attentes_buffes_liste([7,8,9],100)
+
+# %% Remplissage en fonction du taux d'arrivée
+
+def plot_remplissage_lambda():
+    query ='SELECT nbr_clients_moy*poids_moyen as Lambda, nbr_clients_moyen as N, COUNT(*) as Nombre_simulés\
+            FROM Simulation\
+            JOIN Files ON Files.id = file_id\
+            JOIN Arrivees ON Files.id_arrivee = Arrivees.id\
+            JOIN Serveurs ON serveur_1_id = Serveurs.id\
+            GROUP BY Lambda\
+            ORDER BY Lambda'
+    df = pd.read_sql(sql=query, con=con)
+    df.plot(x=0, y=1, color='green')
+    return df.tail()
+    # df.plot(x='K', y=['Attente_moyenne'], color=['blue'])
+    # print(df.head(1))
+    # print(df.tail(1))
+
+plot_remplissage_lambda()
 
 # %%

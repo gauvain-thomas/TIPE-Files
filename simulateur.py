@@ -1,5 +1,4 @@
 import sqlite3
-import pandas as pd
 from classes import *
 from fonctions import *
 import numpy as np
@@ -74,6 +73,19 @@ def insert_simul(f, A, duree, quantite, lamda, poids_moyen, pattern_arrivees, pa
 
     cur.execute('''INSERT INTO Data(taille, pertes, pertes_ponderees, attente, attente_service, file_id, arrivees_id) VALUES (?,?,?,?,?,?,?)''', row)
     con.commit()
+
+for lam in range(1, 10):
+    lam /= 10
+    for k in range(1,50):
+        fun = nommer((lambda p:np.random.poisson(p)), '''poisson(p)''')
+        liste = [File(k,[Serveur(loi_temps=fun)]), File(k,[Serveur_Priorite(loi_temps=fun)])] + [File(k, [Serveur_RR(i, loi_temps=fun)]) for i in range(1,4)]
+        for _ in range(30):
+            A = poisson(10000, lam, poids_poisson(10))
+            for f in liste:
+                A_bis = deepcopy(A)
+                f.reset()
+                insert_simul(f, A_bis, 10000, 10000, lam, 10, 'poisson', 'poisson')
+                
 
 
             

@@ -4,7 +4,7 @@ from fonctions import *
 import numpy as np
 from copy import deepcopy
 
-con = sqlite3.connect('Simulations.con')
+con = sqlite3.connect('Simulations.db')
 
 cur = con.cursor()
 

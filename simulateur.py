@@ -15,6 +15,7 @@ def insert_simul(f, A, duree, quantite, lamda, poids_moyen, pattern_arrivees, pa
     serveurs_id = [None, None, None]
     i = 0
     for s in f.serveurs:
+        q = None
         if s.__name__() == 'RR':
             q = s.quantum
             description_s = (s.__name__(), s.loi_temps.__doc__, q)
@@ -26,6 +27,7 @@ def insert_simul(f, A, duree, quantite, lamda, poids_moyen, pattern_arrivees, pa
         if row:
             serveurs_id[i] = row[0]
         else:
+            description_s = (s.__name__(), s.loi_temps.__doc__, q)
             cur.execute("INSERT INTO Serveurs (discipline, loi_temps, quantum) VALUES (?,?,?)", description_s)
             serveurs_id[i] = cur.lastrowid
     

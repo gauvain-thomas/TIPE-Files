@@ -12,7 +12,11 @@ def index_serveur(S):
     query = 'SELECT id FROM Serveurs WHERE loi_sortie=\'{}\' AND sortie_moyen={}'.format(loi, s_moy)
     l = con.execute(query).fetchone()
     if l == None:
-        q_ajout = 'INSERT INTO Serveurs (loi_sortie, sortie_moyen) VALUES(\'{}\', {})'.format(loi, s_moy)
+        if loi in ['RR_p', 'RR_d']:
+            attente_max = S.attente_max
+            q_ajout = 'INSERT INTO Serveurs (loi_sortie, sortie_moyen, quantum) VALUES(\'{}\', {}), {}'.format(loi, s_moy, attente_max)
+        else:
+            q_ajout = 'INSERT INTO Serveurs (loi_sortie, sortie_moyen) VALUES(\'{}\', {})'.format(loi, s_moy)
         con.execute(q_ajout)
         l = con.execute(query).fetchone()
     con.commit()

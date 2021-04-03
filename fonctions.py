@@ -126,7 +126,7 @@ def trace_taille_arrivees(f1, f2, A):
 
     tn1, N1 = lire_evenements(N1)
     tn2, N2 = lire_evenements(N2)
-    arrivees1, arrivees2 = lire_evenements_creux(A3, t1, cumule = 1), lire_evenements_creux(A3, t2, cumule=1)
+    arrivees1, arrivees2 = lire_evenements_creux(A3, max(tn1), cumule = 1), lire_evenements_creux(A3, max(tn2), cumule=1)
 
     fig, ax = plt.subplots()
 

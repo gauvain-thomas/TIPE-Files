@@ -78,7 +78,7 @@ def insert_simul(f, A, duree, quantite, lamda, poids_moyen, pattern_arrivees, pa
 
 for lam in range(1, 10):
     lam /= 10
-    for k in range(1,50):
+    for k in range(50,51):
         fun = nommer((lambda p:np.random.poisson(p)), '''poisson(p)''')
         liste = [File(k,[Serveur(loi_temps=fun)]), File(k,[Serveur_Priorite(loi_temps=fun)])] + [File(k, [Serveur_RR(i, loi_temps=fun)]) for i in range(1,4)]
         for _ in range(30):

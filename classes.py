@@ -1,3 +1,9 @@
+#----------Constantes----------
+
+au_travail = "tab:green"
+au_repos = "tab:orange"
+
+
 #----------Fonctions----------
 
 def indice_min(l): # Sert a trouver le prochain evenement
@@ -45,6 +51,7 @@ class File:
         self.fin_service = 0
         self.temps_attente = []
         self.temps_chez_serveurs = []
+        self.temps_travail = [[[0 for _ in self.serveurs], au_repos]]
 
     def __name__(self):
         return self.type
@@ -150,6 +157,7 @@ class Serveur:
         self.client_actuel = None
         self.temps_service = 0 # Instant au quel le serveur aura fini de servir le cilent actuel
         self.action_buffer = 0 # Décrit la variation de file.occupation (utilisé dans la classe file)
+        self.etat = au_repos
 
     def __name__(self):
         return 'FIFO'
@@ -161,15 +169,20 @@ class Serveur:
         file.horloge = self.temps_service
         self.action_buffer = 0
         if file.buffer:
+            self.etat = au_travail
             self.client_actuel = file.buffer.pop(0)
             self.action_buffer -= 1
             self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
             file.temps_attente.append(self.temps_service - self.client_actuel[0])
             file.temps_chez_serveurs.append(self.temps_service - file.horloge)
         elif A:
+            self.etat = au_repos
+            ts = self.temps_service
             self.temps_service = A[0][0]
         else:
+            self.etat = au_repos
             file.fin_service += 1
+        file.temps_travail.append([[s.temps_service for s in file.serveurs], self.etat])
         
 class Serveur_RR(Serveur):
     '''
@@ -196,6 +209,7 @@ class Serveur_RR(Serveur):
             self.action_buffer += 1
             self.client_actuel = None
         if file.buffer:
+            self.etat = au_travail
             self.client_actuel = file.buffer.pop(0)
             self.action_buffer -= 1
             t,p = self.client_actuel
@@ -209,9 +223,12 @@ class Serveur_RR(Serveur):
                 file.temps_attente.append(self.temps_service - self.client_actuel[0])
                 self.client_actuel = None
         elif A:
+            self.etat = au_repos
             self.temps_service = A[0][0]
         else:
+            self.etat = au_repos
             file.fin_service += 1
+        file.temps_travail.append([[s.temps_service for s in file.serveurs], self.etat])
 
 class Serveur_Priorite(Serveur):
     '''
@@ -230,12 +247,16 @@ class Serveur_Priorite(Serveur):
         file.horloge = self.temps_service
         self.action_buffer = 0
         if file.buffer:
+            self.etat = au_travail
             self.client_actuel = pop_min(file.buffer)
             self.action_buffer -= 1
             self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
             file.temps_attente.append(self.temps_service - self.client_actuel[0])
             file.temps_chez_serveurs.append(self.temps_service - file.horloge)
         elif A:
+            self.etat = au_repos
             self.temps_service = A[0][0]
         else:
+            self.etat = au_repos
             file.fin_service += 1
+        file.temps_travail.append([[s.temps_service for s in file.serveurs], self.etat])

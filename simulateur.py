@@ -71,22 +71,23 @@ def insert_simul(f, A, duree, quantite, lamda, poids_moyen, pattern_arrivees, pa
     #==================================Data
 
     N = f.simul_taille(A)
+    N = [N[i][1] for i in range(len(N))]
     row = [np.average(N), f.pertes, f.pertes_ponderees, np.average(f.temps_attente), np.average(f.temps_chez_serveurs), file_id, arrivee_id]
 
     cur.execute('''INSERT INTO Data(taille, pertes, pertes_ponderees, attente, attente_service, file_id, arrivees_id) VALUES (?,?,?,?,?,?,?)''', row)
     con.commit()
 
-for lam in range(1, 10):
-    lam /= 10
-    for k in range(50,51):
-        fun = nommer((lambda p:np.random.poisson(p)), '''poisson(p)''')
-        liste = [File(k,[Serveur(loi_temps=fun)]), File(k,[Serveur_Priorite(loi_temps=fun)])] + [File(k, [Serveur_RR(i, loi_temps=fun)]) for i in range(1,4)]
-        for _ in range(30):
-            A = poisson(10000, lam, poids_poisson(10))
-            for f in liste:
-                A_bis = deepcopy(A)
-                f.reset()
-                insert_simul(f, A_bis, 10000, 10000, lam, 10, 'poisson', 'poisson')
+# for lam in range(1, 10):
+#     lam /= 10
+#     for k in range(50,51):
+#         fun = nommer((lambda p:np.random.poisson(p)), '''poisson(p)''')
+#         liste = [File(k,[Serveur(loi_temps=fun)]), File(k,[Serveur_Priorite(loi_temps=fun)])] + [File(k, [Serveur_RR(i, loi_temps=fun)]) for i in range(1,4)]
+#         for _ in range(30):
+#             A = poisson(10000, lam, poids_poisson(10))
+#             for f in liste:
+#                 A_bis = deepcopy(A)
+#                 f.reset()
+#                 insert_simul(f, A_bis, 10000, 10000, lam, 10, 'poisson', 'poisson')
                 
 
 

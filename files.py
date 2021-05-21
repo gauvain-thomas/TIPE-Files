@@ -141,6 +141,15 @@ class File:
 
         return self.buffer.pop(i)
 
+    def pop_premier_petit(self, poids_max):
+        n = self.nbr_clients()
+        i = 0
+        while i < n:
+            if self.buffer[i].poids <= poids_max:
+                return self.buffer.pop(i)
+            i += 1
+        return None
+
 class Client:
     """Classe client : Contient un temps d'attente et un poids"""
 
@@ -295,7 +304,29 @@ class Serveur_Prio(Serveur):
 
         super().iteration(F)
 
-
     def nouveau_client(self, F):
         self.client_actuel = F.pop_buff_min()
         self.has_client = True
+
+class Serveur_FP(Serveur):
+    """Serveur Priorité : le serveur choisit un client dans le buffer dont le poids est minimal"""
+
+    def __init__(self, S, poids_max, nbr_sorties_moyen, loi):
+        super().__init__(S, nbr_sorties_moyen, loi)
+        self.poids_max = poids_max
+
+    def __str__(self):
+        return 'FP : ' + super().__str__()
+
+    def iteration(self, F):
+        if not (self.has_client or F.buffer_vide()):
+            self.nouveau_client(F)
+
+        super().iteration(F)
+
+    def nouveau_client(self, F):
+        self.client_actuel = F.pop_premier_petit(self.poids_max)
+        if self.client_actuel:
+            self.has_client = True
+        else:
+            self.poids_restant = 0

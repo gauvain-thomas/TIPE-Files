@@ -81,7 +81,7 @@ class File:
         # print(self)
         # print('Fin de la simulation')
 
-    def nbr_clients_moy(self):
+    def nbr_arrivees_moyen(self):
         """Renvoie le nombre de clients moyen dans le buffer depuis le début de la simulation"""
         return self.somme_clients/self.t
 
@@ -183,6 +183,7 @@ class Serveur:
         self.has_client = False
         self.loi = loi
         self.nbr_sorties_moyen = nbr_sorties_moyen
+        self.inactivite = 0
 
     def __str__(self):
         if self.has_client:
@@ -214,6 +215,8 @@ class Serveur:
 
         if self.has_client:
             self.client_actuel.inc_temps()
+        else:
+            self.inactivite += 1
 
     def reset(self):
         self.has_client = False

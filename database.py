@@ -15,6 +15,9 @@ def index_serveur(S):
         if loi in ['RR_p', 'RR_d']:
             attente_max = S.attente_max
             q_ajout = 'INSERT INTO Serveurs (loi_sortie, sortie_moyen, quantum) VALUES(\'{}\', {}), {}'.format(loi, s_moy, attente_max)
+        elif loi in ['FP_p', 'FP_d']:
+            pmax = S.poids_max
+            q_ajout = 'INSERT INTO Serveurs (loi_sortie, sortie_moyen, M10_pmax) VALUES(\'{}\', {}), {}'.format(loi, s_moy, pmax)
         else:
             q_ajout = 'INSERT INTO Serveurs (loi_sortie, sortie_moyen) VALUES(\'{}\', {})'.format(loi, s_moy)
         con.execute(q_ajout)
@@ -24,10 +27,10 @@ def index_serveur(S):
 
 def index_arrivee(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen):
     """Renvoie l'index de l'arrivée de la BDD, la créant si elle n'existe pas"""
-    query = 'SELECT id FROM Arrivees WHERE loi_arrivees=\'{}\' AND nbr_clients_moy={} AND loi_poids=\'{}\' AND poids_moyen={}'.format(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen)
+    query = 'SELECT id FROM Arrivees WHERE loi_arrivees=\'{}\' AND nbr_arrivees_moyen={} AND loi_poids=\'{}\' AND poids_moyen={}'.format(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen)
     l = con.execute(query).fetchone()
     if l == None:
-        q_ajout = 'INSERT INTO Arrivees (loi_arrivees, nbr_clients_moy, loi_poids, poids_moyen) VALUES(\'{}\', {}, \'{}\', {})'.format(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen)
+        q_ajout = 'INSERT INTO Arrivees (loi_arrivees, nbr_arrivees_moyen, loi_poids, poids_moyen) VALUES(\'{}\', {}, \'{}\', {})'.format(loi_arrivees, nbr_clients_moyen, loi_poids, poids_moyen)
         con.execute(q_ajout)
         l = con.execute(query).fetchone()
     con.commit()

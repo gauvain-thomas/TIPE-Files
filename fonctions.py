@@ -72,6 +72,7 @@ def fusionne_liste(liste):
 FIFO_d = Serveur_FIFO(lambda:λ, λ, 'FIFO_d')
 FIFO_p = Serveur_FIFO(lambda: np.random.poisson(λ), λ, 'FIFO_p')
 FIFO_p2 = Serveur_FIFO(lambda: np.random.poisson(λ), λ, 'FIFO_p2')
+FIFO_p3 = Serveur_FIFO(lambda: np.random.poisson(λ), λ, 'FIFO_p3')
 # FIFO_b = Serveur_FIFO(lambda: np.random.binomial(n, λ/n), λ, FIFO_b)
 LIFO_p = Serveur_LIFO(lambda: np.random.poisson(λ), λ, 'LIFO_p')
 LIFO_d = Serveur_LIFO(lambda:λ, λ, 'LIFO_d')
@@ -79,14 +80,21 @@ RR_d = Serveur_RR(lambda:λ, λ//10, λ, 'RR_d')
 RR_p = Serveur_RR(lambda: np.random.poisson(λ), λ//10, λ, 'RR_p')
 PRIO_d = Serveur_Prio(lambda:λ, λ, 'PRIO_d')
 PRIO_p = Serveur_Prio(lambda: np.random.poisson(λ), λ, 'PRIO_p')
-FP = Serveur_FP(lambda: np.random.poisson(λ), λ//5,λ, 'PRIO_p')
+PRIO_p2 = Serveur_Prio(lambda: np.random.poisson(λ), λ, 'PRIO_p2')
+PRIO_p3 = Serveur_Prio(lambda: np.random.poisson(λ), λ, 'PRIO_p3')
+FP = Serveur_FP(lambda: np.random.poisson(λ), λ//3,λ, 'FP_p')
+FPd = Serveur_FP(lambda:λ, λ//3,λ, 'FP_d')
 
 # %% Différentes files d'exemple
 
 F1 = File(K=200, serveurs=[FIFO_p], couleur='red')
 F2 = File(K=200, serveurs=[PRIO_p], couleur='blue')
-F3 = File(K=200, serveurs=[FIFO_p, FIFO_p2], couleur='red')
-F_FP = File(K=200, serveurs=[FP, FIFO_p], couleur='green')
+F1d = File(K=200, serveurs=[FIFO_d], couleur='red')
+F2d = File(K=200, serveurs=[PRIO_d], couleur='blue')
+F3 = File(K=200, serveurs=[FIFO_p, FIFO_p2, FIFO_p3], couleur='red')
+F4 = File(K=200, serveurs=[FIFO_p, FIFO_p2, FIFO_p3], couleur='red')
+F_FP = File(K=200, serveurs=[FP, FIFO_p, FIFO_p2], couleur='orange')
+# F_FP = File(K=200, serveurs=[FP, FIFO_p, FIFO_p2], couleur='orange')
 
 # %% Différentes arrivées
 n = 10**4
@@ -95,10 +103,14 @@ A2 = poisson(n, 5, 2)
 A3 = poisson(n, 2, 5)
 A4 = poisson(n, 1, 10)
 A5 = echelon(100, 110, 2, 3)
+A6 = poisson(n, 9, 1)
+A7 = poisson(n,np.sqrt(10) ,np.sqrt(10))
+A8 = poisson(n, 3, 3)
+A9 = poisson(n, 9, 1)
 
 # %%%% Affichages de différents Résultats
 # %% Remplissage du buffer en fonction du temps
-def plot_taille_buffer(F_liste, A):
+def plot_taille_buffer(F_liste, A, figname=None):
     """Prend une liste de files en entrée ainsi qu'une arrivée et simuleces files
     avec la même arrivée"""
     # Plot
@@ -119,7 +131,7 @@ def plot_taille_buffer(F_liste, A):
         start = time.time()
         while not F.file_vide():
             tailles.append(F.nbr_clients())
-            pertes.append(F.pertes)
+            pertes.append(F.pertes_poids)
             F.iteration()
 
         # print("Simulation finie en : {} secondes".format(time.time()-start))
@@ -134,16 +146,21 @@ def plot_taille_buffer(F_liste, A):
         # ax1.set_xlabel('t')
 
         # plt.subplot(212)
-        ax2.plot(pertes, label='Pertes {}'.format(nom), color=F.couleur)
+        ax2.plot(pertes, label='Pertes pondérées {}'.format(nom), color=F.couleur)
         ax2.set_title('Pertes')
         ax2.legend(loc=2)
         # ax2.set_xlabel('t')
 
-plot_taille_buffer([F1, F2], A1)
+plot_taille_buffer([F1, F2], A2)
 plot_taille_buffer([F1, F2], A4)
 
 # %% Caisse moins de dix articles
-plot_taille_buffer([F3, F_FP], fusionne_liste([A1, A3]))
+plot_taille_buffer([F3, F_FP], fusionne_liste([A9, A4, A2]))
+print(np.average(F3.liste_attentes), np.average(F_FP.liste_attentes))
+# for serveur in F_FP.serveurs:
+#     print(serveur, serveur.inactivite//1000)
+# plot_taille_buffer([F4, F_FP], fusionne_liste([A1, A6, A4]))
+# plot_taille_buffer([F3, F_FP], fusionne_liste([A1, A6, A4]))
 
 # %% Little
 def verifie_Little():
@@ -152,7 +169,7 @@ def verifie_Little():
             JOIN Arrivees ON Arrivees.id = id_arrivee'
     little_df = pd.read_sql(sql=query, con=con)
     plot = little_df.plot.scatter(x=0, y=1, color='blue', figsize=(10,6), s=5, title='Vérification de la loi de Little')
-    # little_df.plot(x=0, y=1)☺
+    # little_df.plot(x=0, y=1)
     fig = plot.get_figure()
     # fig.savefig("Verif_Little.png")
     x = little_df['Attente_moyenne'].to_numpy()
@@ -162,7 +179,7 @@ verifie_Little()
 
 # %% Pertes en fonction de la taille du buffer
 def plot_pertes_buffer(lam=9, Kmax=50, ecart=10**-3):
-    query ='SELECT taille_buffer as K, AVG(pertes_poids)/10000 as Pertes, nbr_clients_moy*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
+    query ='SELECT taille_buffer as K, AVG(pertes_poids)/10000 as Pertes, nbr_arrivees_moyen*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
             FROM Simulation\
             JOIN Files ON Files.id = file_id\
             JOIN Arrivees ON Files.id_arrivee = Arrivees.id\
@@ -195,7 +212,7 @@ plot_pertes_buffer(9, 50, 0)
 # %% Temps d'attente en fonction de la taille du buffer
 
 def plot_attentes_buffer(lam=9, Kmax=5000):
-    query ='SELECT taille_buffer as K, AVG(attente_moyen) as Attente_moyenne, nbr_clients_moy*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
+    query ='SELECT taille_buffer as K, AVG(attente_moyen) as Attente_moyenne, nbr_arrivees_moyen*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
             FROM Simulation\
             JOIN Files ON Files.id = file_id\
             JOIN Arrivees ON Files.id_arrivee = Arrivees.id\
@@ -214,7 +231,7 @@ plot_attentes_buffer(9,100)
 plot_attentes_buffer(10,100)
 # %%
 def plot_attentes_buffes_liste(lamliste, Kmax=5000):
-    query ='SELECT taille_buffer as K, AVG(attente_moyen) as Attente_moyenne, nbr_clients_moy*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
+    query ='SELECT taille_buffer as K, AVG(attente_moyen) as Attente_moyenne, nbr_arrivees_moyen*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
             FROM Simulation\
             JOIN Files ON Files.id = file_id\
             JOIN Arrivees ON Files.id_arrivee = Arrivees.id\
@@ -236,7 +253,7 @@ plot_attentes_buffes_liste([7,8,9],100)
 # %% Remplissage en fonction du taux d'arrivée
 
 def plot_remplissage_lambda():
-    query ='SELECT nbr_clients_moy*poids_moyen as Lambda, nbr_clients_moyen as N, COUNT(*) as Nombre_simulés\
+    query ='SELECT nbr_arrivees_moyen*poids_moyen as Lambda, nbr_clients_moyen as N, COUNT(*) as Nombre_simulés\
             FROM Simulation\
             JOIN Files ON Files.id = file_id\
             JOIN Arrivees ON Files.id_arrivee = Arrivees.id\

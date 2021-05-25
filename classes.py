@@ -184,7 +184,7 @@ class Serveur:
             file.fin_service += 1
         file.temps_travail.append([[s.temps_service for s in file.serveurs], self.etat])
         
-class Serveur_RR(Serveur):
+class ServeurRR(Serveur):
     '''
     Hérite de la classe serveur:
 
@@ -230,7 +230,7 @@ class Serveur_RR(Serveur):
             file.fin_service += 1
         file.temps_travail.append([[s.temps_service for s in file.serveurs], self.etat])
 
-class Serveur_Priorite(Serveur):
+class ServeurPrio(Serveur):
     '''
     Hérite de la classe serveur:
 

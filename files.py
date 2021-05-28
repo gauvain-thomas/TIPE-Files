@@ -3,6 +3,7 @@ Définit les classes relatives à la construction et la simultaion de files d'at
 """
 from copy import deepcopy
 import time
+import numpy as np
 # from random import choose
 
 class File:
@@ -84,6 +85,12 @@ class File:
     def nbr_arrivees_moyen(self):
         """Renvoie le nombre de clients moyen dans le buffer depuis le début de la simulation"""
         return self.somme_clients/self.t
+
+    def attente_moyenne(self):
+        return np.average(self.liste_attentes)
+
+    def attente_mediane(self):
+        return np.median(self.liste_attentes)
 
     def file_vide(self):
         """Renvoie True si le buffer est vide, ainsi que chacun des serveurs"""

@@ -66,7 +66,7 @@ def fusionne_liste(liste):
 # %% Différents serveurs
 
 # Poids moyen enlevé par unité de temps
-λ = 10
+λ = 1000
 # n = 5
 # np.random.binomial(n, λ/n, 10)
 FIFO_d = Serveur_FIFO(lambda:λ, λ, 'FIFO_d')
@@ -86,27 +86,30 @@ FP = Serveur_FP(lambda: np.random.poisson(λ), λ//3,λ, 'FP_p')
 FPd = Serveur_FP(lambda:λ, λ//3,λ, 'FP_d')
 
 # %% Différentes files d'exemple
+K=50000
 
-F1 = File(K=200, serveurs=[FIFO_p], couleur='red')
-F2 = File(K=200, serveurs=[PRIO_p], couleur='blue')
-F1d = File(K=200, serveurs=[FIFO_d], couleur='red')
-F2d = File(K=200, serveurs=[PRIO_d], couleur='blue')
-F3 = File(K=200, serveurs=[FIFO_p, FIFO_p2, FIFO_p3], couleur='red')
-F4 = File(K=200, serveurs=[FIFO_p, FIFO_p2, FIFO_p3], couleur='red')
-F_FP = File(K=200, serveurs=[FP, FIFO_p, FIFO_p2], couleur='orange')
+F1 = File(K=K, serveurs=[FIFO_p], couleur='red')
+F2 = File(K=K, serveurs=[PRIO_p], couleur='blue')
+F1d = File(K=K, serveurs=[FIFO_d], couleur='red')
+F2d = File(K=K, serveurs=[PRIO_d], couleur='blue')
+F5 = File(K=K, serveurs=[RR_p], couleur='blue')
+F3 = File(K=K, serveurs=[FIFO_p, FIFO_p2, FIFO_p3], couleur='red')
+F4 = File(K=K, serveurs=[FIFO_p, FIFO_p2, FIFO_p3], couleur='red')
+F_FP = File(K=K, serveurs=[FP, FIFO_p, FIFO_p2], couleur='orange')
 # F_FP = File(K=200, serveurs=[FP, FIFO_p, FIFO_p2], couleur='orange')
 
 # %% Différentes arrivées
-n = 10**4
-A1 = poisson(n, 10, 1)
-A2 = poisson(n, 5, 2)
-A3 = poisson(n, 2, 5)
-A4 = poisson(n, 1, 10)
-A5 = echelon(100, 110, 2, 3)
-A6 = poisson(n, 9, 1)
-A7 = poisson(n,np.sqrt(10) ,np.sqrt(10))
-A8 = poisson(n, 3, 3)
-A9 = poisson(n, 9, 1)
+n = 2*10**3
+A1 = poisson(n, 100, 10)
+A2 = poisson(n, 50, 20)
+A3 = poisson(n, 20, 50)
+A4 = poisson(n, 10, 100)
+A5 = echelon(100, 110, 20, 30)
+A6 = poisson(n, 90, 10)
+# A7 = poisson(n,np.sqrt(10) ,np.sqrt(10))
+A8 = poisson(n, 30, 30)
+A9 = poisson(n, 90, 10)
+A10 = poisson(n, 20, 55)
 
 # %%%% Affichages de différents Résultats
 # %% Remplissage du buffer en fonction du temps
@@ -123,7 +126,8 @@ def plot_taille_buffer(F_liste, A, figname=None):
     for F in F_liste:
         tailles = []
         pertes = []
-        nom = str(F.serveurs[0])[:4]
+        nom = F.serveurs[0].loi
+        # nom = F.nom
 
         F.reset()
         F.A = deepcopy(A)
@@ -151,12 +155,29 @@ def plot_taille_buffer(F_liste, A, figname=None):
         ax2.legend(loc=2)
         # ax2.set_xlabel('t')
 
-plot_taille_buffer([F1, F2], A2)
-plot_taille_buffer([F1, F2], A4)
+        if figname:
+            fig.savefig(figname)
+
+if __name__ == '__main__':
+    plot_taille_buffer([F1, F2], A2)
+    plot_taille_buffer([F1, F2], A4)
 
 # %% Caisse moins de dix articles
-plot_taille_buffer([F3, F_FP], fusionne_liste([A9, A4, A2]))
-print(np.average(F3.liste_attentes), np.average(F_FP.liste_attentes))
+if __name__ == '__main__':
+    plot_taille_buffer([F3, F_FP], fusionne_liste([A1, A4, A3]))
+    # plot_taille_buffer([F_FP, F3], fusionne_listKe([A9, A8, A1]))
+    print(F3.attente_moyenne(), F_FP.attente_moyenne())
+    print(F3.attente_mediane(), F_FP.attente_mediane())
+    # %%
+    # F3.liste_attentes
+    plt.hist(F_FP.liste_attentes, density=True, alpha=.7)
+    # plt.show()
+    plt.hist(F3.liste_attentes, density=True, alpha=.7, label='F_FP')
+    plt.legend(loc=1)
+
+
+
+# %%
 # for serveur in F_FP.serveurs:
 #     print(serveur, serveur.inactivite//1000)
 # plot_taille_buffer([F4, F_FP], fusionne_liste([A1, A6, A4]))
@@ -175,7 +196,8 @@ def verifie_Little():
     x = little_df['Attente_moyenne'].to_numpy()
     y = little_df['Nombre_sortie_normalisé'].to_numpy()
 
-verifie_Little()
+if __name__ == '__main__':
+    verifie_Little()
 
 # %% Pertes en fonction de la taille du buffer
 def plot_pertes_buffer(lam=9, Kmax=50, ecart=10**-3):
@@ -207,7 +229,8 @@ def plot_pertes_buffer(lam=9, Kmax=50, ecart=10**-3):
     # return df.head()
     # return df
 
-plot_pertes_buffer(9, 50, 0)
+if __name__ == '__main__':
+    plot_pertes_buffer(9, 50, 0)
 
 # %% Temps d'attente en fonction de la taille du buffer
 
@@ -226,9 +249,10 @@ def plot_attentes_buffer(lam=9, Kmax=5000):
     # print(df.head(1))
     # print(df.tail(1))
 
-plot_attentes_buffer(9,100)
+if __name__ == '__main__':
+    plot_attentes_buffer(9,100)
 
-plot_attentes_buffer(10,100)
+    plot_attentes_buffer(10,100)
 # %%
 def plot_attentes_buffes_liste(lamliste, Kmax=5000):
     query ='SELECT taille_buffer as K, AVG(attente_moyen) as Attente_moyenne, nbr_arrivees_moyen*poids_moyen as Lambda, COUNT(*) as Nombre_simulés\
@@ -247,8 +271,8 @@ def plot_attentes_buffes_liste(lamliste, Kmax=5000):
         plt.scatter(x, y, label='λ = {}'.format(i), s=15)
     plt.legend(loc=0)
     # print(df.tail(1))
-
-plot_attentes_buffes_liste([7,8,9],100)
+if __name__ == '__main__':
+    plot_attentes_buffes_liste([7,8,9],100)
 
 # %% Remplissage en fonction du taux d'arrivée
 
@@ -268,7 +292,28 @@ def plot_remplissage_lambda():
     # print(df.head(1))
     # print(df.tail(1))
 
-plot_remplissage_lambda()
+if __name__ == '__main__':
+    plot_remplissage_lambda()
+
+# %%
+
+sorties = []
+attentes = []
+F1.A = A1
+# for i in range(10):
+#     for F in [F1, F2, F5]:
+#         print('Starting' + str(i))
+#         A = poisson(n, 100, 50)
+#         F.reset()
+#         F.A = deepcopy(A)
+#         F.simulation()
+#         sorties.append(F.somme_clients)
+#         attentes.append(F.attente_moyenne())
+
+
+# %% Grahes
+
+# plt.scatter(sorties, attentes)
 
 # %%
 # L =

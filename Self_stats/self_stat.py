@@ -45,11 +45,13 @@ plt.plot(attentes2)
 plt.plot(attentes3)
 
 print(np.average(attentes), np.median(attentes))
+print(np.average(attentes2), np.median(attentes2))
+print(np.average(attentes3), np.median(attentes3))
 # %% Histogrammes
 fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, sharey=True)
 
 fig.suptitle('Histogrammes des arrivées / services de plateaux / fins de repas', fontsize=14)
-pas = .5
+pas = 1
 bins = np.linspace(-1, 90, 90/pas)
 # axs[0].set_title('Entrées au self')
 # axs[1].set_title('Services des plateaux')
@@ -60,7 +62,7 @@ axs[0].set(xlim=(0, 90), ylim=(0, 10))
 hist_e = axs[0].hist(entrees, bins=bins, color='red')
 hist_m = axs[1].hist(milieu, bins=bins, color='green')
 hist_s = axs[2].hist(sorties, bins=bins, color='blue')
-
+hist_e
 # a = axs[0][1].hist(a[0], bins=bins, color='red')
 # b = axs[1][1].hist(b[0], bins=bins, color='green')
 # c = axs[2][1].hist(c[0], bins=bins, color='blue')
@@ -75,6 +77,12 @@ proba_e = axs[0].hist(hist_e[0], bins=b, color='red', density=True, rwidth=.75)
 proba_m = axs[1].hist(hist_m[0], bins=b, color='green', density=True, rwidth=.75)
 proba_s = axs[2].hist(hist_s[0], bins=b, color='blue', density=True, rwidth=.75)
 
+moy_e = np.average(proba_e[1][:-1], weights=proba_e[0])
+moy_m = np.average(proba_m[1][:-1], weights=proba_m[0])
+moy_s = np.average(proba_s[1][:-1], weights=proba_s[0])
+
+print(moy_e, moy_m, moy_s)
+
 # %% Éliminer les zéros pour l'histogramme (arrivées vides)
 fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, sharey=True)
 axs[0].set(xlim=(1, 15))
@@ -84,10 +92,10 @@ proba_ez = axs[0].hist(hist_e[0][hist_e[0] > 0], bins=b, color='red', density=Tr
 proba_mz = axs[1].hist(hist_m[0][hist_m[0] > 0], bins=b, color='green', density=True, rwidth=.75)
 proba_sz = axs[2].hist(hist_s[0][hist_s[0] > 0], bins=b, color='blue', density=True, rwidth=.75)
 
-moy_e = np.average(proba_e[1][:-1], weights=proba_e[0])
-moy_m = np.average(proba_m[1][:-1], weights=proba_m[0])
-moy_s = np.average(proba_s[1][:-1], weights=proba_s[0])
-print(moy_e, moy_m, moy_s)
+moy_ez = np.average(proba_ez[1][:-1], weights=proba_e[0])
+moy_mz = np.average(proba_mz[1][:-1], weights=proba_m[0])
+moy_sz = np.average(proba_sz[1][:-1], weights=proba_s[0])
+print(moy_ez, moy_mz, moy_sz)
 # %% Simulation (Première modélisation non réaliste)
 
 def loi_entree():

@@ -2,12 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import pandas as pd
+import os,sys,inspect
+current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 from files import *
 from fonctions import plot_taille_buffer
 
 # %% Lecture fichiers
 
-with open('entrees copy.txt', 'r') as f:
+with open('entrees.txt', 'r') as f:
     entrees = f.readlines()
 
 with open('milieu.txt', 'r') as f:
@@ -123,24 +127,74 @@ class Prefile(File):
 
         super().sortir_client(t)
 
+class Serveur_self(Serveur_FIFO):
+    """docstring for Serveur_self."""
+
+    def __init__(self, S, nbr_sorties_moyen, loi, t_debut):
+        super(Serveur_self, self).__init__(S, nbr_sorties_moyen, loi)
+        self.t_debut = t_debut
+
+    def iteration(self, F):
+        if not F.t < self.t_debut:
+            super().iteration(F)
+
+t_debut = np.where(hist_s[0] != 0)[0][0]
+
 S1 = Serveur_FIFO(loi_milieu, moy_m, 'S1')
-S2 = Serveur_FIFO(loi_sortie, moy_s, 'S2')
+S2 = Serveur_self(loi_sortie, moy_s, 'S2', t_debut=t_debut)
 
 F2 = File(K=300, serveurs=[S2], couleur='blue')
 F1 = Prefile(K=300, serveurs=[S1], couleur='green', postFile=F2)
 
 entrees_int = [int(i) for i in entrees]
 
-from collections import Counter
-temp = dict(Counter(entrees_int))
+# from collections import Counter
+# temp = dict(Counter(hist_e[0]))
+temp = hist_e[0]
 A = dict()
 
-for  t, n in temp.items():
-    # print(t, n)
-    A[t] = [Client(1) for _ in range(n)]
+for i, n in enumerate(temp):
+    A[i] = [Client(1) for _ in range(int(n))]
+
+# for  t, n in temp.items():
+#     # print(t, n)
+#     A[t] = [Client(1) for _ in range(n)]
+
+fig, ax = plt.subplots(1)
+fig.set_size_inches(10, 5)
+fig.tight_layout()
+
+#Première file
+
+tailles = []
+nom = F1.serveurs[0].loi
+
 F1.A = A
-# F2.A
-plot_taille_buffer([F1, F2], A)
+# F2.A = dict()
+
+while not F1.file_vide():
+    tailles.append(F1.nbr_clients())
+    F1.iteration()
+
+ax.plot(tailles, label='Buffer {}'.format(nom), color=F1.couleur)
+ax.set_title('Nombre de clients dans le buffer')
+ax.legend(loc=2)
+
+
+# % Deuxième file
+
+tailles = []
+nom = F2.serveurs[0].loi
+
+F2.A = F1.postA
+
+while not F2.file_vide():
+    tailles.append(F2.nbr_clients())
+    F2.iteration()
+
+ax.plot(tailles, label='Buffer {}'.format(nom), color=F2.couleur)
+ax.set_title('Nombre de clients dans le buffer')
+ax.legend(loc=2)
 # plot_taille_buffer([F2], F1.postA)
 
 # %% Nombre de personnes dans la queue et dans le self

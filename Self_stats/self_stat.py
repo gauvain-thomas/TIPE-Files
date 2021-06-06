@@ -22,8 +22,9 @@ with open('sorties.txt', 'r') as f:
 
 conv_time = lambda t:time.asctime(time.localtime(t))
 
-# Début 'Tue May 25 18:22:55 2021'
-debut = 1621959775
+# conv_time(1621959700)
+# Début 'Tue May 25 18:21:40 2021'
+debut = 1621959700
 # Fin : 'Tue May 25 19:56:11 2021'
 fin = 1621965371
 # conv_time(1621965371)
@@ -51,8 +52,8 @@ print(np.average(attentes3), np.median(attentes3))
 fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, sharey=True)
 
 fig.suptitle('Histogrammes des arrivées / services de plateaux / fins de repas', fontsize=14)
-pas = .5
-bins = np.linspace(-1, 90, 90/pas)
+pas = 1/6
+bins = np.linspace(0, 90, 90/pas)
 # axs[0].set_title('Entrées au self')
 # axs[1].set_title('Services des plateaux')
 # axs[2].set_title('Fins de repas')
@@ -133,12 +134,18 @@ taille_f1
 fig = plt.gcf()
 fig.set_size_inches(10, 6)
 
+# Plot
 plt.plot(bins[:-1], taille_f1, label='Queue', color='red')
 plt.plot(bins[:-1], taille_f2, label='Self', color = 'blue')
 plt.plot(bins[:-1], taille_tot, label='Total', color='green')
 # fig.suptitle('Titre', fontsize=16)
 plt.legend(loc=1)
 # plt.savefig('self1.png', dpi=800)
+
+# Convert to csv
+df = pd.DataFrame(zip(bins[:-1], taille_f1, taille_f2), columns=['time', 'queue', 'self'])
+# df.to_csv('data_self_30sec.csv')
+# df.tail(5)
 
 # %% Simulation (Première modélisation non réaliste)
 

@@ -51,7 +51,7 @@ print(np.average(attentes3), np.median(attentes3))
 fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, sharey=True)
 
 fig.suptitle('Histogrammes des arrivées / services de plateaux / fins de repas', fontsize=14)
-pas = 1
+pas = .5
 bins = np.linspace(-1, 90, 90/pas)
 # axs[0].set_title('Entrées au self')
 # axs[1].set_title('Services des plateaux')
@@ -59,10 +59,18 @@ bins = np.linspace(-1, 90, 90/pas)
 
 axs[0].set(xlim=(0, 90), ylim=(0, 10))
 
-hist_e = axs[0].hist(entrees, bins=bins, color='red')
-hist_m = axs[1].hist(milieu, bins=bins, color='green')
-hist_s = axs[2].hist(sorties, bins=bins, color='blue')
-hist_e
+hist_e = axs[0].hist(entrees, bins=bins, color='red', label='Entrée')
+hist_m = axs[1].hist(milieu, bins=bins, color='green', label='Service plateau')
+hist_s = axs[2].hist(sorties, bins=bins, color='blue', label='Sortie')
+
+axs[0].legend(loc=1)
+axs[1].legend(loc=1)
+axs[2].legend(loc=1)
+
+axs[2].set_xlabel('Temps écoulé (minutes)')
+axs[1].set_ylabel('Nombre d\'arrivées')
+plt.savefig('hist_arr.png', dpi=800)
+
 # a = axs[0][1].hist(a[0], bins=bins, color='red')
 # b = axs[1][1].hist(b[0], bins=bins, color='green')
 # c = axs[2][1].hist(c[0], bins=bins, color='blue')
@@ -73,14 +81,22 @@ axs[0].set(xlim=(0, 15))
 b = range(15)
 plt.xticks(range(15))
 
-proba_e = axs[0].hist(hist_e[0], bins=b, color='red', density=True, rwidth=.75)
-proba_m = axs[1].hist(hist_m[0], bins=b, color='green', density=True, rwidth=.75)
-proba_s = axs[2].hist(hist_s[0], bins=b, color='blue', density=True, rwidth=.75)
+proba_e = axs[0].hist(hist_e[0], bins=b, color='red', density=True, rwidth=.75, label='Entrée')
+proba_m = axs[1].hist(hist_m[0], bins=b, color='green', density=True, rwidth=.75, label='Service plateau')
+proba_s = axs[2].hist(hist_s[0], bins=b, color='blue', density=True, rwidth=.75, label='Sortie')
+
+axs[2].set_xlabel('Nombre d\'arrivées')
+axs[1].set_ylabel('Probabilité')
+
+axs[0].legend(loc=1)
+axs[1].legend(loc=1)
+axs[2].legend(loc=1)
 
 moy_e = np.average(proba_e[1][:-1], weights=proba_e[0])
 moy_m = np.average(proba_m[1][:-1], weights=proba_m[0])
 moy_s = np.average(proba_s[1][:-1], weights=proba_s[0])
 
+# plt.savefig('lois_sorties', dpi=800)
 print(moy_e, moy_m, moy_s)
 
 # %% Éliminer les zéros pour l'histogramme (arrivées vides)
@@ -88,14 +104,42 @@ fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, s
 axs[0].set(xlim=(1, 15))
 plt.xticks(range(1,15))
 
-proba_ez = axs[0].hist(hist_e[0][hist_e[0] > 0], bins=b, color='red', density=True, rwidth=.75)
-proba_mz = axs[1].hist(hist_m[0][hist_m[0] > 0], bins=b, color='green', density=True, rwidth=.75)
-proba_sz = axs[2].hist(hist_s[0][hist_s[0] > 0], bins=b, color='blue', density=True, rwidth=.75)
+proba_ez = axs[0].hist(hist_e[0][hist_e[0] > 0], bins=b, color='red', density=True, rwidth=.75, label='Entrée')
+proba_mz = axs[1].hist(hist_m[0][hist_m[0] > 0], bins=b, color='green', density=True, rwidth=.75, label='Service plateau')
+proba_sz = axs[2].hist(hist_s[0][hist_s[0] > 0], bins=b, color='blue', density=True, rwidth=.75, label='Sortie')
 
-moy_ez = np.average(proba_ez[1][:-1], weights=proba_e[0])
-moy_mz = np.average(proba_mz[1][:-1], weights=proba_m[0])
-moy_sz = np.average(proba_sz[1][:-1], weights=proba_s[0])
+axs[2].set_xlabel('Nombre d\'arrivées')
+axs[1].set_ylabel('Probabilité')
+
+axs[0].legend(loc=1)
+axs[1].legend(loc=1)
+axs[2].legend(loc=1)
+
+moy_ez = np.average(proba_ez[1][:-1], weights=proba_ez[0])
+moy_mz = np.average(proba_mz[1][:-1], weights=proba_mz[0])
+moy_sz = np.average(proba_sz[1][:-1], weights=proba_sz[0])
+
+# plt.savefig('lois_sorties_zeroless', dpi=800)
+
 print(moy_ez, moy_mz, moy_sz)
+
+# %% Nombre de personnes dans la queue et dans le self
+
+taille_f1 = [hist_e[0][:i+1].sum() - hist_m[0][:i+1].sum() for i in range(len(hist_e[0]))]
+taille_f2 = [hist_m[0][:i+1].sum() - hist_s[0][:i+1].sum() for i in range(len(hist_e[0]))]
+# taille_tot = [hist_e[0][:i+1].sum() - hist_s[0][:i+1].sum() for i in range(len(hist_e[0]))]
+taille_tot = [i+j for i,j in zip(taille_f1, taille_f2)]
+taille_f1
+fig = plt.gcf()
+fig.set_size_inches(10, 6)
+
+plt.plot(bins[:-1], taille_f1, label='Queue', color='red')
+plt.plot(bins[:-1], taille_f2, label='Self', color = 'blue')
+plt.plot(bins[:-1], taille_tot, label='Total', color='green')
+# fig.suptitle('Titre', fontsize=16)
+plt.legend(loc=1)
+# plt.savefig('self1.png', dpi=800)
+
 # %% Simulation (Première modélisation non réaliste)
 
 def loi_entree():
@@ -204,20 +248,3 @@ ax.plot(tailles, label='Buffer {}'.format(nom), color=F2.couleur)
 ax.set_title('Nombre de clients dans le buffer')
 ax.legend(loc=2)
 # plot_taille_buffer([F2], F1.postA)
-
-# %% Nombre de personnes dans la queue et dans le self
-
-taille_f1 = [hist_e[0][:i+1].sum() - hist_m[0][:i+1].sum() for i in range(len(hist_e[0]))]
-taille_f2 = [hist_m[0][:i+1].sum() - hist_s[0][:i+1].sum() for i in range(len(hist_e[0]))]
-# taille_tot = [hist_e[0][:i+1].sum() - hist_s[0][:i+1].sum() for i in range(len(hist_e[0]))]
-taille_tot = [i+j for i,j in zip(taille_f1, taille_f2)]
-taille_f1
-fig = plt.gcf()
-fig.set_size_inches(10, 6)
-
-plt.plot(bins[:-1], taille_f1, label='Queue', color='red')
-plt.plot(bins[:-1], taille_f2, label='Self', color = 'blue')
-plt.plot(bins[:-1], taille_tot, label='Total', color='green')
-# fig.suptitle('Titre', fontsize=16)
-plt.legend(loc=1)
-# plt.savefig('self1.png', dpi=800)

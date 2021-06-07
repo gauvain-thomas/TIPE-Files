@@ -1,3 +1,6 @@
+"""Création et analyse des résultats obtenus par mesure expérimentales sur une
+file réelle : le self"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import time
@@ -8,6 +11,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 from files import *
 from fonctions import plot_taille_buffer
+
 
 # %% Lecture fichiers
 
@@ -22,7 +26,6 @@ with open('sorties.txt', 'r') as f:
 
 conv_time = lambda t:time.asctime(time.localtime(t))
 
-# conv_time(1621959700)
 # Début 'Tue May 25 18:21:40 2021'
 debut = 1621959700
 # Fin : 'Tue May 25 19:56:11 2021'
@@ -48,7 +51,10 @@ plt.plot(attentes3)
 print(np.average(attentes), np.median(attentes))
 print(np.average(attentes2), np.median(attentes2))
 print(np.average(attentes3), np.median(attentes3))
+
+
 # %% Histogrammes
+
 fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, sharey=True)
 
 fig.suptitle('Histogrammes des arrivées / services de plateaux / fins de repas', fontsize=14)
@@ -72,11 +78,9 @@ axs[2].set_xlabel('Temps écoulé (minutes)')
 axs[1].set_ylabel('Nombre d\'arrivées')
 plt.savefig('hist_arr.png', dpi=800)
 
-# a = axs[0][1].hist(a[0], bins=bins, color='red')
-# b = axs[1][1].hist(b[0], bins=bins, color='green')
-# c = axs[2][1].hist(c[0], bins=bins, color='blue')
 
-# %% Probabilités
+# %% Lois de probabilités
+
 fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, sharey=True)
 axs[0].set(xlim=(0, 15))
 b = range(15)
@@ -101,6 +105,7 @@ moy_s = np.average(proba_s[1][:-1], weights=proba_s[0])
 print(moy_e, moy_m, moy_s)
 
 # %% Éliminer les zéros pour l'histogramme (arrivées vides)
+
 fig, axs = plt.subplots(3, 1, tight_layout=False, figsize=(10,6), sharex=True, sharey=True)
 axs[0].set(xlim=(1, 15))
 plt.xticks(range(1,15))
@@ -124,28 +129,31 @@ moy_sz = np.average(proba_sz[1][:-1], weights=proba_sz[0])
 
 print(moy_ez, moy_mz, moy_sz)
 
+
 # %% Nombre de personnes dans la queue et dans le self
 
 taille_f1 = [hist_e[0][:i+1].sum() - hist_m[0][:i+1].sum() for i in range(len(hist_e[0]))]
 taille_f2 = [hist_m[0][:i+1].sum() - hist_s[0][:i+1].sum() for i in range(len(hist_e[0]))]
 # taille_tot = [hist_e[0][:i+1].sum() - hist_s[0][:i+1].sum() for i in range(len(hist_e[0]))]
 taille_tot = [i+j for i,j in zip(taille_f1, taille_f2)]
-taille_f1
+
 fig = plt.gcf()
 fig.set_size_inches(10, 6)
 
+
 # Plot
+
 plt.plot(bins[:-1], taille_f1, label='Queue', color='red')
 plt.plot(bins[:-1], taille_f2, label='Self', color = 'blue')
 plt.plot(bins[:-1], taille_tot, label='Total', color='green')
-# fig.suptitle('Titre', fontsize=16)
+
 plt.legend(loc=1)
 # plt.savefig('self1.png', dpi=800)
 
-# Convert to csv
-df = pd.DataFrame(zip(bins[:-1], taille_f1, taille_f2), columns=['time', 'queue', 'self'])
+# Convert data to csv
+# df = pd.DataFrame(zip(bins[:-1], taille_f1, taille_f2), columns=['time', 'queue', 'self'])
 # df.to_csv('data_self_30sec.csv')
-# df.tail(5)
+
 
 # %% Simulation (Première modélisation non réaliste)
 
@@ -158,11 +166,9 @@ def loi_milieu():
 def loi_sortie():
     return np.random.choice(proba_s[1][:-1], p=proba_s[0])
 
-# test = [loi_milieu() for _ in range(10**4)]
-# plt.hist(test, 15, rwidth=.8, density=True)
-
 class Prefile(File):
-    """docstring for PreFile."""
+    """Utilisé pour accoler des files en séries. Adjonction de dictionnaires
+    utilisée par la suite préférable"""
 
     def __init__(self, K, serveurs, couleur, postFile):
         self.postFile = postFile
@@ -170,7 +176,7 @@ class Prefile(File):
         super(Prefile, self).__init__(K, serveurs, couleur='red')
 
     def reset(self):
-        """Remise à zéro de la file, avec les mêmes valeurs initiales --- NON FONCTIONNEL"""
+        """Remise à zéro de la file, avec les mêmes valeurs initiales"""
         for serveur in self.serveurs:
             serveur.reset()
         self.__init__(self.K, self.serveurs, self.couleur, self.postFile)
@@ -187,7 +193,7 @@ class Prefile(File):
         super().sortir_client(t)
 
 class Serveur_self(Serveur_FIFO):
-    """docstring for Serveur_self."""
+    """Utilisé pour que le service commence seulement après t_debut unités de temps"""
 
     def __init__(self, S, nbr_sorties_moyen, loi, t_debut):
         super(Serveur_self, self).__init__(S, nbr_sorties_moyen, loi)
@@ -199,16 +205,14 @@ class Serveur_self(Serveur_FIFO):
 
 t_debut = np.where(hist_s[0] != 0)[0][0]
 
-S1 = Serveur_FIFO(loi_milieu, moy_m, 'S1')
-S2 = Serveur_self(loi_sortie, moy_s, 'S2', t_debut=t_debut)
+S1 = Serveur_FIFO(loi_milieu, moy_m, 'Queue')
+S2 = Serveur_self(loi_sortie, moy_s, 'Self', t_debut=t_debut)
 
 F2 = File(K=300, serveurs=[S2], couleur='blue')
 F1 = Prefile(K=300, serveurs=[S1], couleur='green', postFile=F2)
 
 entrees_int = [int(i) for i in entrees]
 
-# from collections import Counter
-# temp = dict(Counter(hist_e[0]))
 temp = hist_e[0]
 A = dict()
 
@@ -229,13 +233,12 @@ tailles = []
 nom = F1.serveurs[0].loi
 
 F1.A = A
-# F2.A = dict()
 
 while not F1.file_vide():
     tailles.append(F1.nbr_clients())
     F1.iteration()
 
-ax.plot(tailles, label='Buffer {}'.format(nom), color=F1.couleur)
+ax.plot(tailles, label=nom, color=F1.couleur)
 ax.set_title('Nombre de clients dans le buffer')
 ax.legend(loc=2)
 
@@ -251,7 +254,9 @@ while not F2.file_vide():
     tailles.append(F2.nbr_clients())
     F2.iteration()
 
-ax.plot(tailles, label='Buffer {}'.format(nom), color=F2.couleur)
+ax.plot(tailles, label=nom, color=F2.couleur)
 ax.set_title('Nombre de clients dans le buffer')
 ax.legend(loc=2)
+
 # plot_taille_buffer([F2], F1.postA)
+# plt.savefig('Simul_self4.png', dpi=800)

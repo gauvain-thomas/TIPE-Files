@@ -4,7 +4,6 @@ Définit les classes relatives à la construction et la simulation de files d'at
 from copy import deepcopy
 import time
 import numpy as np
-# from random import choose
 
 class File:
     """
@@ -37,7 +36,7 @@ class File:
         self.somme_clients = 0
 
     def reset(self):
-        """Remise à zéro de la file, avec les mêmes valeurs initiales --- NON FONCTIONNEL"""
+        """Remise à zéro de la file, avec les mêmes valeurs initiales"""
         for serveur in self.serveurs:
             serveur.reset()
         self.__init__(self.K, self.serveurs, self.couleur)

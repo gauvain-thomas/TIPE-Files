@@ -1,7 +1,7 @@
 #----------Constantes----------
 
 au_travail = "tab:green"
-au_repos = "tab:orange"
+au_repos = "papayawhip"
 
 
 #----------Fonctions----------
@@ -61,16 +61,12 @@ class File:
             serveur.reset()
         self.__init__(self.taille_buffer, self.serveurs)
 
-    def simul(self,A):
+    def evenement(self, A):
 
-        nb_serveurs = len(self.serveurs)
+            services = [serv.temps_service for serv in self.serveurs]
+            i = indice_min(services)
 
-        while self.fin_service != nb_serveurs:
-            
-            liste = [serv.temps_service for serv in self.serveurs]
-            i = indice_min(liste)
-
-            if A and (A[0][0] <= liste[i]):
+            if A and (A[0][0] <= services[i]):
                 t,p = A.pop(0)
                 self.horloge = t
                 if self.occupation <= self.taille_buffer :
@@ -83,71 +79,32 @@ class File:
             else:
                 self.serveurs[i].service(self, A)
                 self.occupation += self.serveurs[i].action_buffer
+
+    def simul(self,A):
+        nb_serveurs = len(self.serveurs)
+        while self.fin_service != nb_serveurs:
+            self.evenement(A)
 
     def simul_taille(self,A):
-
         N = []
-
         nb_serveurs = len(self.serveurs)
-
         while self.fin_service != nb_serveurs:
-            
-            liste = [serv.temps_service for serv in self.serveurs]
-            i = indice_min(liste)
-
-            if A and (A[0][0] <= liste[i]):
-                t,p = A.pop(0)
-                self.horloge = t
-                if self.occupation <= self.taille_buffer :
-                    self.buffer.append([t,p])
-                    self.occupation += 1
-                else:
-                    self.pertes += 1
-                    self.pertes_ponderees += p
-                N.append((self.horloge, self.occupation))
-
-            else:
-                self.serveurs[i].service(self, A)
-                self.occupation += self.serveurs[i].action_buffer
-                N.append((self.horloge, self.occupation))
-                
+            self.evenement(A)
+            N.append((self.horloge, self.occupation))     
         N.append((self.horloge, self.occupation))
-
         return N
         
     def simul_taille_pertes(self,A):
-
         N = []
         P = []
-
         nb_serveurs = len(self.serveurs)
-
         while self.fin_service != nb_serveurs:
-            
-            liste = [serv.temps_service for serv in self.serveurs]
-            i = indice_min(liste)
-
-            if A and (A[0][0] <= liste[i]):
-                t,p = A.pop(0)
-                self.horloge = t
-                if self.occupation <= self.taille_buffer :
-                    self.buffer.append([t,p])
-                    self.occupation += 1
-                else:
-                    self.pertes += 1
-                    self.pertes_ponderees += p
-                N.append((self.horloge, self.occupation))
-                P.append((self.horloge, self.pertes_ponderees))
-
-            else:
-                self.serveurs[i].service(self, A)
-                self.occupation += self.serveurs[i].action_buffer
-                N.append((self.horloge, self.occupation))
-                P.append((self.horloge, self.pertes_ponderees))
-                
+            self.evenement(A)
+            N.append((self.horloge, self.occupation))
+            P.append((self.horloge, self.pertes_ponderees))
+   
         N.append((self.horloge, self.occupation))
         P.append((self.horloge, self.pertes_ponderees))
-
         return N,P
 
 class Serveur:
@@ -164,17 +121,24 @@ class Serveur:
     
     def reset(self):
         self.__init__(loi_temps = self.loi_temps)
+
+    def traitement(self, file):
+            self.client_actuel = file.buffer.pop(0)
+            self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
+            file.temps_attente.append(self.temps_service - self.client_actuel[0])
+            file.temps_chez_serveurs.append(self.temps_service - file.horloge)
     
     def service(self, file, A):
         file.horloge = self.temps_service
         self.action_buffer = 0
+        try:
+            self.pre_traitement(file)
+        except AttributeError:
+            pass
         if file.buffer:
             self.etat = au_travail
-            self.client_actuel = file.buffer.pop(0)
             self.action_buffer -= 1
-            self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
-            file.temps_attente.append(self.temps_service - self.client_actuel[0])
-            file.temps_chez_serveurs.append(self.temps_service - file.horloge)
+            self.traitement(file)
         elif A:
             self.etat = au_repos
             ts = self.temps_service
@@ -201,34 +165,24 @@ class ServeurRR(Serveur):
     def reset(self):
         self.__init__(self.quantum, loi_temps = self.loi_temps)
 
-    def service(self, file, A):
-        file.horloge = self.temps_service
-        self.action_buffer = 0
+    def pre_traitement(self, file):
         if self.client_actuel:
             file.buffer.append(self.client_actuel)
             self.action_buffer += 1
             self.client_actuel = None
-        if file.buffer:
-            self.etat = au_travail
-            self.client_actuel = file.buffer.pop(0)
-            self.action_buffer -= 1
-            t,p = self.client_actuel
-            temps_de_service = self.loi_temps(p)
-            if temps_de_service > self.quantum:
-                self.temps_service = self.quantum + file.horloge
-                p -= int(self.quantum//(temps_de_service/p))
-                self.client_actuel = (t,p)
-            else:
-                self.temps_service = temps_de_service + file.horloge
-                file.temps_attente.append(self.temps_service - self.client_actuel[0])
-                self.client_actuel = None
-        elif A:
-            self.etat = au_repos
-            self.temps_service = A[0][0]
+
+    def traitement(self, file):
+        self.client_actuel = file.buffer.pop(0)
+        t,p = self.client_actuel
+        temps_de_service = self.loi_temps(p)
+        if temps_de_service > self.quantum:
+            self.temps_service = self.quantum + file.horloge
+            p -= int(self.quantum//(temps_de_service/p))
+            self.client_actuel = (t,p)
         else:
-            self.etat = au_repos
-            file.fin_service += 1
-        file.temps_travail.append([[s.temps_service for s in file.serveurs], self.etat])
+            self.temps_service = temps_de_service + file.horloge
+            file.temps_attente.append(self.temps_service - self.client_actuel[0])
+            self.client_actuel = None
 
 class ServeurPrio(Serveur):
     '''
@@ -238,25 +192,13 @@ class ServeurPrio(Serveur):
     '''
     
     def __init__(self, loi_temps = nommer((lambda poids :poids/10), 'p/10')):
-        super().__init__()
+        super().__init__(loi_temps)
 
     def __name__(self):
         return 'PRIO'
 
-    def service(self, file, A):
-        file.horloge = self.temps_service
-        self.action_buffer = 0
-        if file.buffer:
-            self.etat = au_travail
-            self.client_actuel = pop_min(file.buffer)
-            self.action_buffer -= 1
-            self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
-            file.temps_attente.append(self.temps_service - self.client_actuel[0])
-            file.temps_chez_serveurs.append(self.temps_service - file.horloge)
-        elif A:
-            self.etat = au_repos
-            self.temps_service = A[0][0]
-        else:
-            self.etat = au_repos
-            file.fin_service += 1
-        file.temps_travail.append([[s.temps_service for s in file.serveurs], self.etat])
+    def traitement(self, file):
+        self.client_actuel = pop_min(file.buffer)
+        self.temps_service = self.loi_temps(self.client_actuel[1]) + file.horloge
+        file.temps_attente.append(self.temps_service - self.client_actuel[0])
+        file.temps_chez_serveurs.append(self.temps_service - file.horloge)

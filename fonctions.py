@@ -88,37 +88,35 @@ def distribution(l):
     plt.plot(out)
     plt.show()
 
-def trace_taille_pertes(f1, f2, A):
-    A2 = cp.deepcopy(A)
-    N1, P1 = f1.simul_taille_pertes(A)
-    N2, P2 = f2.simul_taille_pertes(A2)
+def trace_taille_pertes(fs, A):
 
-    tn1, N1 = lire_evenements(N1)
-    tn2, N2 = lire_evenements(N2)
-    tp1, P1 = lire_evenements(P1)
-    tp2, P2 = lire_evenements(P2)
-
+    colors = ['blue', 'orange', 'green', 'red']
+    
     fig, axs = plt.subplots(2)
 
     axs[0].title.set_text('taille de la file')
     axs[0].set_xlabel('temps')
-    axs[0].plot(tn1, N1, color='blue', label=f1.type)
-    axs[0].tick_params(axis='y')
-    axs[0].plot(tn2, N2, color='orange', label=f2.type)
-    axs[0].legend()
 
     axs[1].title.set_text('pertes')
     axs[1].set_xlabel('temps')
-    axs[1].plot(tp1, P1, color='blue')
+
+    for (i, f) in enumerate(fs):
+        A_bis = cp.deepcopy(A)
+        N, P = f.simul_taille_pertes(A_bis)
+        (tn, N), (tp, P) = lire_evenements(N), lire_evenements(P)
+        axs[0].plot(tn, N, color=colors[i], label=f.type)
+        axs[1].plot(tp, P, color=colors[i])
+
+    axs[0].tick_params(axis='y')
+    axs[0].legend()
     axs[1].tick_params(axis='y')
-    axs[1].plot(tp2, P2, color='orange')
-    
 
     fig.tight_layout()
 
     plt.show()
 
-def trace_taille_arrivees(f1, f2, A):
+def trace_taille_arrivees(f1, f2, A, title=''):
+
     A2 = cp.deepcopy(A)
     A3 = cp.deepcopy(A)
     N1= f1.simul_taille(A)
@@ -130,7 +128,8 @@ def trace_taille_arrivees(f1, f2, A):
 
     fig, ax = plt.subplots()
 
-    ax.title.set_text('taille de la file')
+    ax.title.set_text(title)
+    ax.set_ylabel('taille')
     ax.set_xlabel('temps')
     ax.plot(tn1, N1, color='tab:blue', label=f1.type)
     ax.tick_params(axis='y')
